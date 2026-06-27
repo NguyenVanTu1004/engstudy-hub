@@ -195,7 +195,7 @@ const res = await fetch('/api/vocabularies/sync', {
 
       return {
         // Chuyển id thành dạng chuỗi hợp lệ để khớp với trường VARCHAR(50) của MySQL
-        id: `v_${Date.now()}_${index}`,
+       id: Date.now() + index,
         word: pw.word || '',
         ipa: pw.ipa || '',
         meaning: pw.meaning || '',
@@ -371,7 +371,7 @@ const res = await fetch('/api/vocabularies/sync', {
 
     if (formMode === 'create') {
       const newVocab: Vocabulary = {
-        id: Date.now(),
+        id: Date.now()  ,
         word,
         ipa,
         meaning,
