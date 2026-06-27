@@ -5,6 +5,7 @@ dotenv.config();
 
 export let isDbConnected = false;
 // Parse environment variables with robust fallback support
+export let dbErrorDetails: string = "";
 let rawHost = process.env.DB_HOST || "127.0.0.1";
 let rawPort = parseInt(process.env.DB_PORT || "3307");
 let rawUser = process.env.DB_USER || process.env.DB_USERNAME || "root";
