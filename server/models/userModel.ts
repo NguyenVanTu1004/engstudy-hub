@@ -17,7 +17,7 @@ export let memoryUsers: DBUser[] = [
   {
     id: 1,
     username: 'admin',
-    fullName: 'Nguyễn Văn Admin',
+    fullName: 'Nguyễn Văn Tứ',
     email: 'admin@edu.vn',
     password: 'admin',
     role: 'ADMIN',

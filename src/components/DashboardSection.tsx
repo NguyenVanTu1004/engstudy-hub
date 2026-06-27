@@ -21,7 +21,10 @@ export default function DashboardSection({ vocabularies, profile, users }: Dashb
   const averageScore = testsCompleted > 0 ? Math.round(totalScore / testsCompleted) : 0;
 
   // Compute stats from progress data
-  const totalMinutes = STUDY_PROGRESS_DATA.reduce((acc, curr) => acc + curr.minutes, 0);
+  const totalMinutes = profile?.history?.reduce((acc, curr) => {
+  // Dùng toán tử OR (|| 0) để phòng trường hợp có bản ghi nào đó bị thiếu trường minutes không gây lỗi hệ thống
+  return acc + (curr.minutes || curr.duration_minutes || 0);
+}, 0) || 0;
 
   // Dynamic calculations from real data
   const easyWordsCount = vocabularies.filter(v => v.difficulty.toLowerCase() === 'easy').length;
@@ -69,7 +72,7 @@ export default function DashboardSection({ vocabularies, profile, users }: Dashb
             <Users className="w-5 h-5" />
           </div>
           <div>
-            <p className="text-[10px] font-bold text-slate-400 uppercase">Thành viên thật</p>
+            <p className="text-[10px] font-bold text-slate-400 uppercase">Thành viên của hệ thống</p>
             <p className="text-xl font-extrabold text-indigo-600 mt-0.5">{users.length}</p>
           </div>
         </div>
@@ -103,7 +106,9 @@ export default function DashboardSection({ vocabularies, profile, users }: Dashb
           </div>
           <div>
             <p className="text-[10px] font-bold text-slate-400 uppercase">Chuỗi ngày học</p>
-            <p className="text-xl font-extrabold text-slate-800 mt-0.5">{profile.history.length > 0 ? 3 + profile.history.length : 3} ngày liên tục</p>
+           <p className="text-xl font-extrabold text-slate-800 mt-0.5">
+  {profile?.history?.length || 0} ngày liên tục
+          </p>
           </div>
         </div>
       </div>
@@ -399,12 +404,12 @@ export default function DashboardSection({ vocabularies, profile, users }: Dashb
               <div>
                 <h3 className="font-bold text-slate-800 text-sm flex items-center space-x-2">
                   <Users className="w-4 h-4 text-indigo-500" />
-                  <span>Danh Sách Người Dùng Thực Tế Trên Hệ Thống ({users.length} thành viên)</span>
+                  <span>Danh Sách Người Dùng Của Hệ Thống Trên Hệ Thống ({users.length} thành viên)</span>
                 </h3>
                 <p className="text-[10px] text-slate-400">Dữ liệu tài khoản thời gian thực hỗ trợ đồng bộ hóa MySQL Database</p>
               </div>
               <span className="text-[9px] bg-emerald-50 text-emerald-700 border border-emerald-200 font-extrabold px-2 py-0.5 rounded-full uppercase tracking-wider font-sans">
-                Dữ liệu thật
+                User Total
               </span>
             </div>
 
