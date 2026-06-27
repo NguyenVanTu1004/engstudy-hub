@@ -52,7 +52,6 @@ export const TOPICS = [
   'Từ vựng TOEIC theo chủ đề: Đàm phán (Negotiations)',
    'Từ vựng TOEIC theo chủ đề: Hoạt động từ thiện (Charity & Non-profit)'
 ];
-
 export const INITIAL_VOCABULARIES: Vocabulary[] = [
   {
     id: 1,

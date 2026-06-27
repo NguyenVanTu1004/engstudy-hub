@@ -4,13 +4,45 @@ import dotenv from "dotenv";
 dotenv.config();
 
 export let isDbConnected = false;
+/ Parse environment variables with robust fallback support
+let rawHost = process.env.DB_HOST || "127.0.0.1";
+let rawPort = parseInt(process.env.DB_PORT || "3307");
+let rawUser = process.env.DB_USER || process.env.DB_USERNAME || "root";
+let rawPassword = process.env.DB_PASSWORD || "";
+let rawDatabase = process.env.DB_NAME || process.env.DB_DATABASE || "english_learning";
+
+// Smart parsing if DB_HOST contains a full connection URL (e.g. mysql://user:pass@host:port/database)
+if (rawHost.startsWith("mysql://") || rawHost.startsWith("mysql:")) {
+  try {
+    const url = new URL(rawHost);
+    rawHost = url.hostname;
+    if (url.port) {
+      rawPort = parseInt(url.port);
+    }
+    if (url.username) {
+      rawUser = decodeURIComponent(url.username);
+    }
+    if (url.password) {
+      rawPassword = decodeURIComponent(url.password);
+    }
+    if (url.pathname) {
+      const dbName = url.pathname.substring(1);
+      if (dbName) {
+        rawDatabase = dbName;
+      }
+    }
+    console.log("🔌 Successfully parsed MySQL Connection String!");
+  } catch (e: any) {
+    console.warn("⚠️ Cannot parse DB_HOST as URL, treating as literal string. Error:", e.message);
+  }
+}
 export const dbConfigUsed = {
-  host: process.env.DB_HOST || "127.0.0.1",
-  port: parseInt(process.env.DB_PORT || "3307"),
-  user: process.env.DB_USER || "root",
-  database: process.env.DB_NAME || "english_learning"
+  host: rawHost,
+  port: rawPort,
+  user: rawUser,
+  password: rawPassword,
+  database: rawDatabase
 };
-export let dbErrorDetails = "";
 export let pool: mysql.Pool | null = null;
 
 export async function initDatabase() {
@@ -21,7 +53,7 @@ export async function initDatabase() {
       host: dbConfigUsed.host,
       port: dbConfigUsed.port,
       user: dbConfigUsed.user,
-      password: process.env.DB_PASSWORD || "",
+      password: dbConfigUsed.password,
       database: dbConfigUsed.database,
       waitForConnections: true,
       connectionLimit: 5,
