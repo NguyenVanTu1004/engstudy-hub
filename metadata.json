@@ -1,0 +1,6 @@
+{
+  "name": "Java English Learning Hub",
+  "description": "Học tiếng Anh thông minh với Flashcard, Luyện đề, Quiz cùng với Trình xem mã nguồn Spring Boot 3 chuẩn Senior Developer.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

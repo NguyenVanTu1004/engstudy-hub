@@ -1,0 +1,551 @@
+import { Vocabulary, Exam, StudySession, MockUser } from '../types';
+
+export const TOPICS = [
+   'Từ vựng TOEIC theo chủ đề: Văn phòng (Office)',
+  'Từ vựng TOEIC theo chủ đề: Nhân sự (Human Resources)',
+  'Từ vựng TOEIC theo chủ đề: Kinh doanh (Business)',
+  'Từ vựng TOEIC theo chủ đề: Tài chính (Finance)',
+  'Từ vựng TOEIC theo chủ đề: Ngân hàng (Banking)',
+  'Từ vựng TOEIC theo chủ đề: Marketing & Quảng cáo (Marketing & Advertising)',
+  'Từ vựng TOEIC theo chủ đề: Khách sạn (Hotel)',
+  'Từ vựng TOEIC theo chủ đề: Nhà hàng (Restaurant)',
+  'Từ vựng TOEIC theo chủ đề: Giao thông (Transportation)',
+  'Từ vựng TOEIC theo chủ đề: Du lịch (Travel)',
+  'Từ vựng TOEIC theo chủ đề: Mua sắm (Shopping)',
+  'Từ vựng TOEIC theo chủ đề: Dịch vụ khách hàng (Customer Service)',
+  'Từ vựng TOEIC theo chủ đề: Công nghệ (Technology)',
+  'Từ vựng TOEIC theo chủ đề: Y tế (Healthcare)',
+  'Từ vựng TOEIC theo chủ đề: Giáo dục (Education)',
+  'Từ vựng TOEIC theo chủ đề: Logistics (Logistics)',
+  'Từ vựng TOEIC theo chủ đề: Giao nhận hàng hóa (Shipping)',
+  'Từ vựng TOEIC theo chủ đề: Xây dựng (Construction)',
+  'Từ vựng TOEIC theo chủ đề: Bất động sản (Real Estate)',
+  'Từ vựng TOEIC theo chủ đề: Môi trường (Environment)',
+  'Từ vựng TOEIC theo chủ đề: Thời tiết (Weather)',
+  'Từ vựng TOEIC theo chủ đề: Pháp luật (Law)',
+  'Từ vựng TOEIC theo chủ đề: Bảo hiểm (Insurance)',
+  'Từ vựng TOEIC theo chủ đề: Sản xuất (Manufacturing)',
+  'Từ vựng TOEIC theo chủ đề: Chuỗi cung ứng (Supply Chain)',
+  'Từ vựng TOEIC theo chủ đề: Giao tiếp (Communication)',
+  'Từ vựng TOEIC theo chủ đề: Hội nghị (Meetings)',
+  'Từ vựng TOEIC theo chủ đề: Quản lý dự án (Project Management)',
+  'Từ vựng TOEIC theo chủ đề: Hành chính văn phòng (Administrative Tasks)',
+  'Từ vựng TOEIC theo chủ đề: Thể thao (Sports)',
+  'Từ vựng TOEIC theo chủ đề: Giải trí (Entertainment)',
+  'Từ vựng TOEIC theo chủ đề: Nghệ thuật (Arts)',
+  'Từ vựng TOEIC theo chủ đề: Thời trang (Fashion)',
+  'Từ vựng TOEIC theo chủ đề: Sự kiện (Events)',
+  'Từ vựng TOEIC theo chủ đề: Phương tiện truyền thông (Media)',
+  'Từ vựng TOEIC theo chủ đề: Điện thoại (Telecommunications)',
+  'Từ vựng TOEIC theo chủ đề: Nông nghiệp (Agriculture)',
+  'Từ vựng TOEIC theo chủ đề: Thực phẩm và đồ uống (Food & Beverage)',
+  'Từ vựng TOEIC theo chủ đề: Vận tải (Transportation Systems)',
+  'Từ vựng TOEIC theo chủ đề: An toàn lao động (Workplace Safety)',
+  'Từ vựng TOEIC theo chủ đề: Tài nguyên thiên nhiên (Natural Resources)',
+  'Từ vựng TOEIC theo chủ đề: Sản phẩm và dịch vụ (Products & Services)',
+  'Từ vựng TOEIC theo chủ đề: Quan hệ đối tác (Partnerships)',
+  'Từ vựng TOEIC theo chủ đề: Quản lý thời gian (Time Management)',
+  'Từ vựng TOEIC theo chủ đề: Bảo trì thiết bị (Equipment Maintenance)',
+  'Từ vựng TOEIC theo chủ đề: Xuất nhập khẩu (Import & Export)',
+  'Từ vựng TOEIC theo chủ đề: Phát triển sản phẩm (Product Development)',
+  'Từ vựng TOEIC theo chủ đề: Khủng hoảng và quản lý rủi ro (Crisis & Risk Management)',
+  'Từ vựng TOEIC theo chủ đề: Đàm phán (Negotiations)',
+   'Từ vựng TOEIC theo chủ đề: Hoạt động từ thiện (Charity & Non-profit)'
+];
+
+export const INITIAL_VOCABULARIES: Vocabulary[] = [
+  {
+    id: 1,
+    word: 'Appointment',
+    ipa: '/əˈpɔɪnt.mənt/',
+    meaning: 'Cuộc hẹn',
+    partOfSpeech: 'Noun',
+    example: 'I have an appointment with the manager at 10 a.m.',
+    exampleMeaning: 'Tôi có một cuộc hẹn với quản lý vào lúc 10 giờ sáng.',
+    image: 'https://images.unsplash.com/photo-1506784983877-45594efa4cbe?w=600&auto=format&fit=crop&q=60',
+    topic: 'TOEIC Office',
+    difficulty: 'Medium',
+    createdAt: '2026-06-01'
+  },
+  {
+    id: 2,
+    word: 'Briefcase',
+    ipa: '/ˈbriːf.keɪs/',
+    meaning: 'Cặp tài liệu',
+    partOfSpeech: 'Noun',
+    example: 'He carried his documents in a leather briefcase.',
+    exampleMeaning: 'Anh ấy mang theo tài liệu của mình trong một chiếc cặp da.',
+    image: 'https://images.unsplash.com/photo-1553062407-98eeb64c6a62?w=600&auto=format&fit=crop&q=60',
+    topic: 'TOEIC Office',
+    difficulty: 'Easy',
+    createdAt: '2026-06-02'
+  },
+  {
+    id: 3,
+    word: 'Conference',
+    ipa: '/ˈkɒn.fər.əns/',
+    meaning: 'Hội nghị',
+    partOfSpeech: 'Noun',
+    example: 'The annual conference will be held next week.',
+    exampleMeaning: 'Hội nghị thường niên sẽ được tổ chức vào tuần tới.',
+    image: 'https://images.unsplash.com/photo-1540575467063-178a50c2df87?w=600&auto=format&fit=crop&q=60',
+    topic: 'TOEIC Office',
+    difficulty: 'Medium',
+    createdAt: '2026-06-03'
+  },
+  {
+    id: 4,
+    word: 'Desk',
+    ipa: '/desk/',
+    meaning: 'Bàn làm việc',
+    partOfSpeech: 'Noun',
+    example: 'She left her notebook on the desk.',
+    exampleMeaning: 'Cô ấy đã để cuốn sổ tay của mình trên bàn làm việc.',
+    image: 'https://images.unsplash.com/photo-1518455027359-f3f8164ba6bd?w=600&auto=format&fit=crop&q=60',
+    topic: 'TOEIC Office',
+    difficulty: 'Easy',
+    createdAt: '2026-06-04'
+  },
+  {
+    id: 5,
+    word: 'Employee',
+    ipa: '/ɪmˈplɔɪ.iː/',
+    meaning: 'Nhân viên',
+    partOfSpeech: 'Noun',
+    example: 'Our company has over 500 employees.',
+    exampleMeaning: 'Công ty chúng tôi có hơn 500 nhân viên.',
+    image: 'https://images.unsplash.com/photo-1522071820081-009f0129c71c?w=600&auto=format&fit=crop&q=60',
+    topic: 'TOEIC Office',
+    difficulty: 'Easy',
+    createdAt: '2026-06-05'
+  },
+  {
+    id: 6,
+    word: 'Employer',
+    ipa: '/ɪmˈplɔɪ.ər/',
+    meaning: 'Người tuyển dụng',
+    partOfSpeech: 'Noun',
+    example: 'The employer offered her a generous salary.',
+    exampleMeaning: 'Người tuyển dụng đã đề xuất một mức lương hậu hĩnh cho cô ấy.',
+    image: 'https://images.unsplash.com/photo-1551836022-d5d88e9218df?w=600&auto=format&fit=crop&q=60',
+    topic: 'TOEIC Office',
+    difficulty: 'Easy',
+    createdAt: '2026-06-06'
+  },
+  {
+    id: 7,
+    word: 'File',
+    ipa: '/faɪl/',
+    meaning: 'Tệp tài liệu',
+    partOfSpeech: 'Noun',
+    example: 'Please save the document in this file.',
+    exampleMeaning: 'Vui lòng lưu tài liệu trong tệp tài liệu này.',
+    image: 'https://images.unsplash.com/photo-1568667256549-094345857637?w=600&auto=format&fit=crop&q=60',
+    topic: 'TOEIC Office',
+    difficulty: 'Easy',
+    createdAt: '2026-06-07'
+  },
+  {
+    id: 8,
+    word: 'Fax',
+    ipa: '/fæks/',
+    meaning: 'Máy fax',
+    partOfSpeech: 'Noun',
+    example: 'Could you send this document via fax?',
+    exampleMeaning: 'Bạn có thể gửi tài liệu này qua máy fax không?',
+    image: 'https://images.unsplash.com/photo-1596524430615-b46475ddff6e?w=600&auto=format&fit=crop&q=60',
+    topic: 'TOEIC Office',
+    difficulty: 'Easy',
+    createdAt: '2026-06-08'
+  },
+  {
+    id: 9,
+    word: 'Keyboard',
+    ipa: '/ˈkiː.bɔːd/',
+    meaning: 'Bàn phím',
+    partOfSpeech: 'Noun',
+    example: "The keyboard on my laptop isn't working.",
+    exampleMeaning: 'Bàn phím trên máy tính xách tay của tôi không hoạt động.',
+    image: 'https://images.unsplash.com/photo-1587829741301-dc798b83add3?w=600&auto=format&fit=crop&q=60',
+    topic: 'TOEIC Office',
+    difficulty: 'Easy',
+    createdAt: '2026-06-09'
+  },
+  {
+    id: 10,
+    word: 'Meeting',
+    ipa: '/ˈmiː.tɪŋ/',
+    meaning: 'Cuộc họp',
+    partOfSpeech: 'Noun',
+    example: 'The team has a meeting every Monday morning.',
+    exampleMeaning: 'Nhóm có một cuộc họp vào mỗi sáng thứ Hai.',
+    image: 'https://images.unsplash.com/photo-1517245386807-bb43f82c33c4?w=600&auto=format&fit=crop&q=60',
+    topic: 'TOEIC Office',
+    difficulty: 'Easy',
+    createdAt: '2026-06-10'
+  },
+  {
+    id: 11,
+    word: 'Office',
+    ipa: '/ˈɒf.ɪs/',
+    meaning: 'Văn phòng',
+    partOfSpeech: 'Noun',
+    example: 'She works in a large office downtown.',
+    exampleMeaning: 'Cô ấy làm việc tại một văn phòng lớn ở trung tâm thành phố.',
+    image: 'https://images.unsplash.com/photo-1497366216548-37526070297c?w=600&auto=format&fit=crop&q=60',
+    topic: 'TOEIC Office',
+    difficulty: 'Easy',
+    createdAt: '2026-06-11'
+  },
+  {
+    id: 12,
+    word: 'Paperclip',
+    ipa: '/ˈpeɪ.pə.klɪp/',
+    meaning: 'Kẹp giấy',
+    partOfSpeech: 'Noun',
+    example: 'Use a paperclip to keep these pages together.',
+    exampleMeaning: 'Sử dụng một chiếc kẹp giấy để giữ các trang này lại với nhau.',
+    image: 'https://images.unsplash.com/photo-1512314889357-e157c22f938d?w=600&auto=format&fit=crop&q=60',
+    topic: 'TOEIC Office',
+    difficulty: 'Easy',
+    createdAt: '2026-06-12'
+  },
+  {
+    id: 13,
+    word: 'Printer',
+    ipa: '/ˈprɪn.tər/',
+    meaning: 'Máy in',
+    partOfSpeech: 'Noun',
+    example: 'The printer is out of paper again.',
+    exampleMeaning: 'Máy in lại bị hết giấy nữa rồi.',
+    image: 'https://images.unsplash.com/photo-1612815154858-60aa4c59eaa6?w=600&auto=format&fit=crop&q=60',
+    topic: 'TOEIC Office',
+    difficulty: 'Easy',
+    createdAt: '2026-06-13'
+  },
+  {
+    id: 14,
+    word: 'Schedule',
+    ipa: '/ˈʃedz.uːl/',
+    meaning: 'Lịch trình',
+    partOfSpeech: 'Noun',
+    example: 'Check the schedule to confirm the meeting time.',
+    exampleMeaning: 'Kiểm tra lịch trình để xác nhận thời gian họp.',
+    image: 'https://images.unsplash.com/photo-1506784365847-bbad939e9335?w=600&auto=format&fit=crop&q=60',
+    topic: 'TOEIC Office',
+    difficulty: 'Medium',
+    createdAt: '2026-06-14'
+  },
+  {
+    id: 15,
+    word: 'Supervisor',
+    ipa: '/ˈsuː.pə.vaɪ.zər/',
+    meaning: 'Người giám sát',
+    partOfSpeech: 'Noun',
+    example: 'My supervisor is very supportive and helpful.',
+    exampleMeaning: 'Người giám sát của tôi rất hỗ trợ và hữu ích.',
+    image: 'https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?w=600&auto=format&fit=crop&q=60',
+    topic: 'TOEIC Office',
+    difficulty: 'Medium',
+    createdAt: '2026-06-15'
+  },
+  {
+    id: 16,
+    word: 'Task',
+    ipa: '/tɑːsk/',
+    meaning: 'Nhiệm vụ',
+    partOfSpeech: 'Noun',
+    example: 'Each task must be completed by the deadline.',
+    exampleMeaning: 'Mỗi nhiệm vụ phải được hoàn thành trước hạn chót.',
+    image: 'https://images.unsplash.com/photo-1484480974693-6ca0a78fb36b?w=600&auto=format&fit=crop&q=60',
+    topic: 'TOEIC Office',
+    difficulty: 'Easy',
+    createdAt: '2026-06-16'
+  },
+  {
+    id: 17,
+    word: 'Telephone',
+    ipa: '/ˈtel.ɪ.fəʊn/',
+    meaning: 'Điện thoại bàn',
+    partOfSpeech: 'Noun',
+    example: 'She answered the telephone after two rings.',
+    exampleMeaning: 'Cô ấy đã trả lời điện thoại bàn sau hai tiếng chuông.',
+    image: 'https://images.unsplash.com/photo-1520923642038-b4a53cbd74ad?w=600&auto=format&fit=crop&q=60',
+    topic: 'TOEIC Office',
+    difficulty: 'Easy',
+    createdAt: '2026-06-17'
+  },
+  {
+    id: 18,
+    word: 'Workspace',
+    ipa: '/ˈwɜːk.speɪs/',
+    meaning: 'Không gian làm việc',
+    partOfSpeech: 'Noun',
+    example: 'His workspace is always clean and organized.',
+    exampleMeaning: 'Không gian làm việc của anh ấy luôn sạch sẽ và ngăn nắp.',
+    image: 'https://images.unsplash.com/photo-1497215728101-856f4ea42174?w=600&auto=format&fit=crop&q=60',
+    topic: 'TOEIC Office',
+    difficulty: 'Easy',
+    createdAt: '2026-06-18'
+  },
+  {
+    id: 19,
+    word: 'Document',
+    ipa: '/ˈdɒk.jə.mənt/',
+    meaning: 'Tài liệu',
+    partOfSpeech: 'Noun',
+    example: 'Please print the document for the meeting.',
+    exampleMeaning: 'Vui lòng in tài liệu cho cuộc họp.',
+    image: 'https://images.unsplash.com/photo-1450133064473-71024230f91b?w=600&auto=format&fit=crop&q=60',
+    topic: 'TOEIC Office',
+    difficulty: 'Easy',
+    createdAt: '2026-06-19'
+  },
+  {
+    id: 20,
+    word: 'Projector',
+    ipa: '/prəˈdʒek.tər/',
+    meaning: 'Máy chiếu',
+    partOfSpeech: 'Noun',
+    example: 'The projector is used for presentations.',
+    exampleMeaning: 'Máy chiếu được sử dụng cho các buổi thuyết trình.',
+    image: 'https://images.unsplash.com/photo-1535016120720-40c646be5580?w=600&auto=format&fit=crop&q=60',
+    topic: 'TOEIC Office',
+    difficulty: 'Medium',
+    createdAt: '2026-06-20'
+  },
+  {
+    id: 21,
+    word: 'Deadline',
+    ipa: '/ˈded.laɪn/',
+    meaning: 'Hạn chót',
+    partOfSpeech: 'Noun',
+    example: 'We have to meet the deadline for this project.',
+    exampleMeaning: 'Chúng tôi phải hoàn thành đúng hạn chót cho dự án này.',
+    image: 'https://images.unsplash.com/photo-1506784983877-45594efa4cbe?w=600&auto=format&fit=crop&q=60',
+    topic: 'TOEIC Office',
+    difficulty: 'Medium',
+    createdAt: '2026-06-21'
+  },
+  {
+    id: 22,
+    word: 'Receptionist',
+    ipa: '/rɪˈsep.ʃən.ɪst/',
+    meaning: 'Lễ tân',
+    partOfSpeech: 'Noun',
+    example: 'The receptionist greeted us with a warm smile.',
+    exampleMeaning: 'Nhân viên lễ tân đã chào đón chúng tôi bằng một nụ cười ấm áp.',
+    image: 'https://images.unsplash.com/photo-1560250097-0b93528c311a?w=600&auto=format&fit=crop&q=60',
+    topic: 'TOEIC Office',
+    difficulty: 'Medium',
+    createdAt: '2026-06-22'
+  },
+  {
+    id: 23,
+    word: 'Stationery',
+    ipa: '/ˈsteɪ.ʃən.ər.i/',
+    meaning: 'Văn phòng phẩm',
+    partOfSpeech: 'Noun',
+    example: 'We need to order more stationery for the office.',
+    exampleMeaning: 'Chúng tôi cần đặt thêm văn phòng phẩm cho văn phòng.',
+    image: 'https://images.unsplash.com/photo-1456086272160-b28b0645b729?w=600&auto=format&fit=crop&q=60',
+    topic: 'TOEIC Office',
+    difficulty: 'Medium',
+    createdAt: '2026-06-23'
+  },
+  {
+    id: 24,
+    word: 'Memo',
+    ipa: '/ˈmem.əʊ/',
+    meaning: 'Thông báo nội bộ',
+    partOfSpeech: 'Noun',
+    example: 'I sent a memo to all staff regarding the changes.',
+    exampleMeaning: 'Tôi đã gửi một thông báo nội bộ đến toàn thể nhân viên về những thay đổi.',
+    image: 'https://images.unsplash.com/photo-1517842645767-c639042777db?w=600&auto=format&fit=crop&q=60',
+    topic: 'TOEIC Office',
+    difficulty: 'Easy',
+    createdAt: '2026-06-24'
+  },
+  // HR Topic
+  {
+    id: 25,
+    word: 'Applicant',
+    ipa: '/ˈæp.lɪ.kənt/',
+    meaning: 'Người nộp đơn, ứng viên',
+    partOfSpeech: 'Noun',
+    example: 'The company received over 100 applicants for the position.',
+    exampleMeaning: 'Công ty đã nhận được hơn 100 đơn ứng tuyển cho vị trí này.',
+    image: 'https://images.unsplash.com/photo-1586281380349-632531db7ed4?w=600&auto=format&fit=crop&q=60',
+    topic: 'Nhân sự (Human Resources)',
+    difficulty: 'Medium',
+    createdAt: '2026-06-25'
+  },
+  {
+    id: 26,
+    word: 'Recruitment',
+    ipa: '/rɪˈkruːt.mənt/',
+    meaning: 'Tuyển dụng',
+    partOfSpeech: 'Noun',
+    example: 'The HR department handles all recruitment activities.',
+    exampleMeaning: 'Phòng nhân sự chịu trách nhiệm xử lý tất cả các hoạt động tuyển dụng.',
+    image: 'https://images.unsplash.com/photo-1565756327-27b0b601f01c?w=600&auto=format&fit=crop&q=60',
+    topic: 'Nhân sự (Human Resources)',
+    difficulty: 'Medium',
+    createdAt: '2026-06-25'
+  },
+  {
+    id: 27,
+    word: 'Resume',
+    ipa: '/ˈrez.juː.meɪ/',
+    meaning: 'Sơ yếu lý lịch',
+    partOfSpeech: 'Noun',
+    example: 'Please attach your resume to the application.',
+    exampleMeaning: 'Vui lòng đính kèm sơ yếu lý lịch của bạn vào đơn xin việc.',
+    image: 'https://images.unsplash.com/photo-1586281380349-632531db7ed4?w=600&auto=format&fit=crop&q=60',
+    topic: 'Nhân sự (Human Resources)',
+    difficulty: 'Medium',
+    createdAt: '2026-06-25'
+  },
+  {
+    id: 28,
+    word: 'Interview',
+    ipa: '/ˈɪn.tə.vjuː/',
+    meaning: 'Phỏng vấn',
+    partOfSpeech: 'Noun',
+    example: 'The interview went well, and she got the job.',
+    exampleMeaning: 'Buổi phỏng vấn đã diễn ra tốt đẹp, và cô ấy đã nhận được công việc.',
+    image: 'https://images.unsplash.com/photo-1573497019940-1c28c88b4f3e?w=600&auto=format&fit=crop&q=60',
+    topic: 'Nhân sự (Human Resources)',
+    difficulty: 'Easy',
+    createdAt: '2026-06-25'
+  }
+];
+
+export const INITIAL_EXAMS: Exam[] = [
+  {
+    id: 1,
+    title: 'TOEIC Office Vocabulary Test',
+    category: 'TOEIC',
+    timeLimit: 10,
+    questions: [
+      {
+        id: 101,
+        type: 'MCQ',
+        text: 'The newly hired ______ is responsible for greeting visitors and answering phone calls at the entrance.',
+        options: ['receptionist', 'supervisor', 'briefcase', 'projector'],
+        correctAnswer: 'receptionist',
+        explanation: 'Receptionist (Lễ tân) là người chịu trách nhiệm chào đón khách khứa và nghe điện thoại ở lối vào.'
+      },
+      {
+        id: 102,
+        type: 'MCQ',
+        text: 'All office supplies like paper, pens, and paperclips are categorized as ______.',
+        options: ['briefcase', 'stationery', 'appointment', 'workspace'],
+        correctAnswer: 'stationery',
+        explanation: 'Stationery nghĩa là văn phòng phẩm, bao gồm giấy, bút, kẹp giấy.'
+      },
+      {
+        id: 103,
+        type: 'FILL_IN',
+        text: 'Each worker must complete their assigned task before the given ______ (hạn chót).',
+        options: ['deadline'],
+        correctAnswer: 'deadline',
+        explanation: 'Deadline nghĩa là hạn chót hoàn thành nhiệm vụ.'
+      },
+      {
+        id: 104,
+        type: 'MCQ',
+        text: 'Our team will hold an urgent ______ in the main conference room to discuss the new budget.',
+        options: ['meeting', 'desk', 'briefcase', 'keyboard'],
+        correctAnswer: 'meeting',
+        explanation: 'Meeting nghĩa là cuộc họp.'
+      }
+    ]
+  },
+  {
+    id: 2,
+    title: 'Human Resources (Nhân sự) Practice Quiz',
+    category: 'TOEIC',
+    timeLimit: 5,
+    questions: [
+      {
+        id: 201,
+        type: 'MCQ',
+        text: 'Before coming to the job interview, every ______ must submit their resume and cover letter.',
+        options: ['applicant', 'supervisor', 'briefcase', 'memo'],
+        correctAnswer: 'applicant',
+        explanation: 'Applicant nghĩa là người nộp đơn, ứng viên.'
+      },
+      {
+        id: 202,
+        type: 'FILL_IN',
+        text: 'Write the English word for "Sơ yếu lý lịch" (starts with r_ _ _ _e):',
+        options: ['resume'],
+        correctAnswer: 'resume',
+        explanation: 'Resume nghĩa là sơ yếu lý lịch.'
+      },
+      {
+        id: 203,
+        type: 'MCQ',
+        text: 'The HR department is launching a new ______ campaign to find senior software engineers.',
+        options: ['recruitment', 'receptionist', 'appointment', 'document'],
+        correctAnswer: 'recruitment',
+        explanation: 'Recruitment campaign nghĩa là chiến dịch tuyển dụng.'
+      }
+    ]
+  }
+];
+
+export const STUDY_PROGRESS_DATA: StudySession[] = [
+  { date: 'Mon', minutes: 15, wordsLearned: 3, score: 85 },
+  { date: 'Tue', minutes: 30, wordsLearned: 5, score: 90 },
+  { date: 'Wed', minutes: 20, wordsLearned: 2, score: 75 },
+  { date: 'Thu', minutes: 45, wordsLearned: 8, score: 95 },
+  { date: 'Fri', minutes: 10, wordsLearned: 1, score: 80 },
+  { date: 'Sat', minutes: 35, wordsLearned: 6, score: 88 },
+  { date: 'Sun', minutes: 50, wordsLearned: 10, score: 92 }
+];
+
+export const INITIAL_MOCK_USERS: MockUser[] = [
+  {
+    id: 1,
+    username: 'admin',
+    fullName: 'Nguyễn Văn Admin',
+    email: 'admin@edu.vn',
+    role: 'ADMIN',
+    isActive: true,
+    avatar: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100&auto=format&fit=crop&q=80',
+    createdAt: '2026-01-10'
+  },
+  {
+    id: 2,
+    username: 'tuan_nguyen',
+    fullName: 'Nguyễn Anh Tuấn',
+    email: 'tuanna@gmail.com',
+    role: 'USER',
+    isActive: true,
+    avatar: 'https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?w=100&auto=format&fit=crop&q=80',
+    createdAt: '2026-06-15'
+  },
+  {
+    id: 3,
+    username: 'lan_anh',
+    fullName: 'Trần Lan Anh',
+    email: 'lananh99@yahoo.com',
+    role: 'USER',
+    isActive: false,
+    avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100&auto=format&fit=crop&q=80',
+    createdAt: '2026-06-20'
+  },
+  {
+    id: 4,
+    username: 'hoang_long',
+    fullName: 'Phạm Hoàng Long',
+    email: 'longph@outlook.com',
+    role: 'USER',
+    isActive: true,
+    avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&auto=format&fit=crop&q=80',
+    createdAt: '2026-06-22'
+  }
+];
+
