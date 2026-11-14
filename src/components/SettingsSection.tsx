@@ -462,7 +462,7 @@ export default function SettingsSection({
             <div className="space-y-2 text-xs">
               <div className="flex items-center justify-between py-1 border-b border-slate-50">
                 <span className="text-slate-400">Vai trò:</span>
-                <span className="font-bold text-slate-800">{profile.role === 'admin' ? 'Quản trị viên (Admin)' : 'Thành viên học tập'}</span>
+                <span className="font-bold text-slate-800">{profile.role?.toUpperCase() === 'ADMIN' ? 'Quản trị viên (Admin)' : 'Thành viên học tập'}</span>
               </div>
               <div className="flex items-center justify-between py-1 border-b border-slate-50">
                 <span className="text-slate-400">Trạng thái:</span>

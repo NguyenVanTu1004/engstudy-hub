@@ -152,7 +152,7 @@ export default function DictationSection() {
           <div className="bg-white/15 backdrop-blur-md border border-white/20 rounded-2xl p-4 text-center min-w-[90px]">
             <span className="block text-2xl font-black text-amber-300">
               {completedIds.length > 0 
-                ? `${Math.round(Object.values(accuracyHistory).reduce((a, b) => a + b, 0) / completedIds.length)}%` 
+                ? `${Math.round(((Object.values(accuracyHistory) as number[]).reduce((a, b) => a + b, 0)) / completedIds.length)}%` 
                 : '100%'}
             </span>
             <span className="text-[10px] text-teal-100 uppercase tracking-wider font-bold">Độ chính xác</span>

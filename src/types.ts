@@ -50,6 +50,7 @@ export interface ExamResult {
   date: string;
   minutes?: number;
   duration_minutes?: number;
+  createdAt?: string;
 }
 
 export interface StudySession {
@@ -60,6 +61,7 @@ export interface StudySession {
 }
 
 export interface UserProfile {
+  id?: number;
   username: string;
   email: string;
   fullName: string;
