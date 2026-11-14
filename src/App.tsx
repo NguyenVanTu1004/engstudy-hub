@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Vocabulary, UserProfile, ExamResult, MockUser } from './types';
 import { INITIAL_VOCABULARIES, INITIAL_MOCK_USERS } from './data/englishData';
+import { api, getAuthToken, setAuthToken, removeAuthToken } from './services/api';
 
 // Subcomponents
 import VocabularySection from './components/VocabularySection';
@@ -14,6 +15,8 @@ import JavaCodeViewer from './components/JavaCodeViewer';
 import PronunciationSection from './components/PronunciationSection';
 import DocumentSection from './components/DocumentSection';
 import SettingsSection from './components/SettingsSection';
+import GrammarSection from './components/GrammarSection';
+import DictationSection from './components/DictationSection';
 
 // Icons
 import {
@@ -37,7 +40,11 @@ import {
   FileText,
   Settings,
   Sun,
-  Moon
+  Moon,
+  Menu,
+  X,
+  Compass,
+  Headphones
 } from 'lucide-react';
 
 const AVATARS = [
@@ -51,8 +58,11 @@ export default function App() {
   // Navigation: 'APP' | 'DEV_HUB'
   const [currentMode, setCurrentMode] = useState<'APP' | 'DEV_HUB'>('APP');
   
-  // App internal tabs: 'dashboard' | 'vocab' | 'flashcard' | 'quiz' | 'exam' | 'profile' | 'admin' | 'pronounce' | 'document' | 'settings'
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'vocab' | 'flashcard' | 'quiz' | 'exam' | 'profile' | 'admin' | 'pronounce' | 'document' | 'settings'>('dashboard');
+  // App internal tabs: 'dashboard' | 'vocab' | 'flashcard' | 'quiz' | 'exam' | 'profile' | 'admin' | 'pronounce' | 'document' | 'settings' | 'grammar' | 'dictation'
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'vocab' | 'flashcard' | 'quiz' | 'exam' | 'profile' | 'admin' | 'pronounce' | 'document' | 'settings' | 'grammar' | 'dictation'>('dashboard');
+
+  // Mobile navigation drawer toggle
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   // Multi-language system state ('VI' | 'EN' | 'JA')
   const [language, setLanguage] = useState<'VI' | 'EN' | 'JA'>('VI');
@@ -100,7 +110,7 @@ export default function App() {
   const [vocabularies, setVocabularies] = useState<Vocabulary[]>([]);
 
   // App-wide users state (for real user count and management)
-  const [users, setUsers] = useState<MockUser[]>([]);
+  const [users, setUsers] = useState<MockUser[]>(INITIAL_MOCK_USERS);
 
   // Authenticated mock auth screen state
   const [loginUsername, setLoginUsername] = useState('admin');
@@ -196,8 +206,7 @@ export default function App() {
   // API Callers
   const fetchDbStatus = async () => {
     try {
-      const res = await fetch('/api/db-status');
-      const data = await res.json();
+      const data = await api.get('/api/db-status');
       setDbStatus(data);
     } catch (err) {
       setDbStatus({ connected: false, mode: 'Offline Failover' });
@@ -206,18 +215,12 @@ export default function App() {
 
   const fetchVocabularies = async () => {
     try {
-      const res = await fetch('/api/vocabularies');
-      const data = await res.json();
+      const data = await api.get('/api/vocabularies');
       if (data.success) {
         if (data.vocabularies.length === 0) {
           console.log("Database empty. Seeding initial vocabulary values automatically...");
-          await fetch('/api/vocabularies/sync', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ vocabularies: INITIAL_VOCABULARIES })
-          });
-          const refRes = await fetch('/api/vocabularies');
-          const refData = await refRes.json();
+          await api.post('/api/vocabularies/sync', { vocabularies: INITIAL_VOCABULARIES }, true);
+          const refData = await api.get('/api/vocabularies');
           if (refData.success) {
             setVocabularies(refData.vocabularies);
           }
@@ -232,8 +235,7 @@ export default function App() {
 
   const fetchUsers = async () => {
     try {
-      const res = await fetch('/api/users');
-      const data = await res.json();
+      const data = await api.get('/api/users', true);
       if (data.success) {
         setUsers(data.users);
       }
@@ -242,24 +244,109 @@ export default function App() {
     }
   };
 
-  // Run on mount
+  // Run on mount with real JWT session restore
   useEffect(() => {
-    fetchDbStatus();
-    fetchVocabularies();
-    fetchUsers();
+    const initApp = async () => {
+      await fetchDbStatus();
+
+      const token = getAuthToken();
+      if (token) {
+        try {
+          const authData = await api.get('/api/auth/me', true);
+          if (authData.success && authData.user) {
+            setCurrentUser(authData.user);
+            setIsLoggedIn(true);
+            await fetchUsers();
+          }
+        } catch (e) {
+          console.warn("Session expired or invalid, logging out.");
+          removeAuthToken();
+          setIsLoggedIn(false);
+        }
+      }
+
+      await fetchVocabularies();
+    };
+
+    initApp();
+
+    const handleAuthExpired = () => {
+      setIsLoggedIn(false);
+      removeAuthToken();
+      setActiveTab('dashboard');
+    };
+    window.addEventListener('auth:expired', handleAuthExpired);
+    return () => window.removeEventListener('auth:expired', handleAuthExpired);
   }, []);
 
-  // Sync edited vocabularies to Backend (MySQL on Port 3307 or fallback memory store)
+  // Sync edited vocabularies to Backend granularly
   const handleUpdateVocabularies = async (updatedVocabs: Vocabulary[]) => {
     setVocabularies(updatedVocabs);
-    try {
-      await fetch('/api/vocabularies/sync', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ vocabularies: updatedVocabs })
-      });
-    } catch (err) {
-      console.error("Error updating vocabulary store:", err);
+
+    // 1. Detect if items were added
+    if (updatedVocabs.length > vocabularies.length) {
+      const newWords = updatedVocabs.filter(v => !vocabularies.some(old => old.id === v.id));
+      if (newWords.length > 0) {
+        try {
+          if (newWords.length === 1) {
+            await api.post('/api/vocabularies', newWords[0], true);
+          } else {
+            await api.post('/api/vocabularies/sync', { vocabularies: newWords }, true);
+          }
+          fetchVocabularies();
+        } catch (e) {
+          console.error('Lỗi thêm từ vựng:', e);
+        }
+      }
+      return;
+    }
+
+    // 2. Detect if an item was deleted
+    if (updatedVocabs.length < vocabularies.length) {
+      const deleted = vocabularies.find(v => !updatedVocabs.some(u => u.id === v.id));
+      if (deleted) {
+        try {
+          await api.delete(`/api/vocabularies/${deleted.id}`, true);
+          fetchVocabularies();
+        } catch (e) {
+          console.error('Lỗi xóa từ vựng:', e);
+        }
+      }
+      return;
+    }
+
+    // 3. Detect if a property was updated (learned, favorite, or details)
+    const changed = updatedVocabs.find(v => {
+      const old = vocabularies.find(o => o.id === v.id);
+      return old && (
+        old.isLearned !== v.isLearned || 
+        old.isFavorite !== v.isFavorite || 
+        old.word !== v.word || 
+        old.meaning !== v.meaning ||
+        old.difficulty !== v.difficulty ||
+        old.topic !== v.topic
+      );
+    });
+
+    if (changed) {
+      const old = vocabularies.find(o => o.id === changed.id);
+      if (old) {
+        try {
+          if (old.isLearned !== changed.isLearned) {
+            await api.post(`/api/vocabularies/${changed.id}/toggle-learned`, {}, true);
+            setCurrentUser(prev => ({
+              ...prev,
+              learnedWordsCount: Math.max(0, prev.learnedWordsCount + (changed.isLearned ? 1 : -1))
+            }));
+          } else if (old.isFavorite !== changed.isFavorite) {
+            await api.post(`/api/vocabularies/${changed.id}/toggle-favorite`, {}, true);
+          } else {
+            await api.put(`/api/vocabularies/${changed.id}`, changed, true);
+          }
+        } catch (e) {
+          console.error('Lỗi cập nhật từ vựng:', e);
+        }
+      }
     }
   };
 
@@ -272,34 +359,24 @@ export default function App() {
     }
 
     try {
-      const response = await fetch('/api/auth/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username: loginUsername, password: loginPassword })
-      });
-      const data = await response.json();
+      const data = await api.post('/api/auth/login', { username: loginUsername, password: loginPassword });
       if (data.success) {
-        setCurrentUser({
-          ...currentUser,
-          username: data.user.username,
-          fullName: data.user.fullName,
-          email: data.user.email,
-          role: data.user.role,
-          avatar: data.user.avatar || AVATARS[1],
-          history: currentUser.history
-        });
+        setAuthToken(data.token);
+        setCurrentUser(data.user);
         setIsLoggedIn(true);
         setErrorMsg('');
         setActiveTab('dashboard');
         // Refresh values on success
-        fetchVocabularies();
-        fetchUsers();
-        fetchDbStatus();
+        await Promise.all([
+          fetchVocabularies(),
+          fetchUsers(),
+          fetchDbStatus()
+        ]);
       } else {
         setErrorMsg(data.message || 'Tài khoản hoặc mật khẩu không chính xác!');
       }
     } catch (err: any) {
-      setErrorMsg('Lỗi kết nối Server: ' + err.message);
+      setErrorMsg(err.message || 'Lỗi kết nối Server');
     }
   };
 
@@ -343,18 +420,13 @@ export default function App() {
     }
 
     try {
-      const response = await fetch('/api/auth/register', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          username: regUser,
-          fullName: regName,
-          email: regMail,
-          password: regPass,
-          avatar: AVATARS[Math.floor(Math.random() * AVATARS.length)] || AVATARS[1]
-        })
+      const data = await api.post('/api/auth/register', {
+        username: regUser,
+        fullName: regName,
+        email: regMail,
+        password: regPass,
+        avatar: AVATARS[Math.floor(Math.random() * AVATARS.length)] || AVATARS[1]
       });
-      const data = await response.json();
       if (data.success) {
         setErrorMsg('');
         setSuccessMsg(data.message || 'Đăng ký thành công tài khoản mới!');
@@ -365,17 +437,25 @@ export default function App() {
         setRegPass('');
         setRegPassConfirm('');
         setRegName('');
-        setTimeout(() => {
-          setAuthView('login');
-          setLoginUsername(regUser);
-          setLoginPassword(regPass);
-          setSuccessMsg('');
-        }, 1500);
+
+        if (data.token) {
+          setAuthToken(data.token);
+          setCurrentUser(data.user);
+          setIsLoggedIn(true);
+          setActiveTab('dashboard');
+        } else {
+          setTimeout(() => {
+            setAuthView('login');
+            setLoginUsername(regUser);
+            setLoginPassword(regPass);
+            setSuccessMsg('');
+          }, 1500);
+        }
       } else {
         setErrorMsg(data.message || 'Lỗi đăng ký tài khoản!');
       }
     } catch (err: any) {
-      setErrorMsg('Lỗi kết nối Server: ' + err.message);
+      setErrorMsg(err.message || 'Lỗi kết nối Server');
     }
   };
 
@@ -390,12 +470,7 @@ export default function App() {
     try {
       setOtpDigits(['', '', '', '', '', '']);
       setOtpCode('');
-      const response = await fetch('/api/auth/otp-request', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: otpEmail })
-      });
-      const data = await response.json();
+      const data = await api.post('/api/auth/otp-request', { email: otpEmail });
       if (data.success) {
         setErrorMsg('');
         setSuccessMsg(data.message);
@@ -409,7 +484,7 @@ export default function App() {
         setErrorMsg(data.message || 'Địa chỉ email không tồn tại trong hệ thống!');
       }
     } catch (err: any) {
-      setErrorMsg('Lỗi kết nối khôi phục: ' + err.message);
+      setErrorMsg(err.message || 'Lỗi kết nối khôi phục');
     }
   };
 
@@ -422,12 +497,7 @@ export default function App() {
     }
 
     try {
-      const response = await fetch('/api/auth/otp-verify', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: otpEmail, otp: otpCode, newPassword: otpNewPass })
-      });
-      const data = await response.json();
+      const data = await api.post('/api/auth/otp-verify', { email: otpEmail, otp: otpCode, newPassword: otpNewPass });
       if (data.success) {
         setErrorMsg('');
         setSuccessMsg(data.message || 'Đặt lại mật khẩu thành công!');
@@ -445,14 +515,12 @@ export default function App() {
         setErrorMsg(data.message || 'Mã xác thực OTP không chính xác hoặc đã hết hạn!');
       }
     } catch (err: any) {
-      setErrorMsg('Lỗi kết nối xác nhận: ' + err.message);
+      setErrorMsg(err.message || 'Lỗi kết nối xác nhận');
     }
   };
 
-
-
-  // Add Test Result
-  const handleAddTestResult = (result: {
+  // Add Test Result (Real Database persistence)
+  const handleAddTestResult = async (result: {
     examTitle: string;
     category: string;
     score: number;
@@ -460,26 +528,80 @@ export default function App() {
     totalQuestions: number;
     timeSpent: string;
   }) => {
-    const newResult: ExamResult = {
+    let savedResult: ExamResult = {
       id: Date.now(),
       ...result,
       date: new Date().toISOString().split('T')[0]
     };
 
-    const updatedHistory = [newResult, ...currentUser.history];
+    try {
+      const data = await api.post('/api/exams/results', result, true);
+      if (data.success && data.result) {
+        savedResult = data.result;
+      }
+    } catch (err) {
+      console.error("Lưu kết quả bài thi vào cơ sở dữ liệu:", err);
+    }
+
+    const updatedHistory = [savedResult, ...currentUser.history];
     const totalScores = updatedHistory.reduce((acc, curr) => acc + curr.score, 0);
 
-    setCurrentUser({
-      ...currentUser,
+    setCurrentUser(prev => ({
+      ...prev,
       history: updatedHistory,
       completedTestsCount: updatedHistory.length,
       averageScore: Math.round(totalScores / updatedHistory.length)
+    }));
+  };
+
+  // Handle user logout
+  const handleLogout = () => {
+    removeAuthToken();
+    setIsLoggedIn(false);
+    setCurrentUser({
+      username: 'guest',
+      email: '',
+      fullName: 'Khách vãng lai',
+      avatar: AVATARS[0],
+      role: 'USER',
+      learnedWordsCount: 0,
+      completedTestsCount: 0,
+      averageScore: 0,
+      history: [],
+      studyProgress: []
     });
+    fetchVocabularies();
+    setActiveTab('dashboard');
   };
 
   // Update profile
-  const handleUpdateProfile = (updated: UserProfile) => {
+  const handleUpdateProfile = async (updated: UserProfile) => {
     setCurrentUser(updated);
+    try {
+      const res = await api.put('/api/auth/profile', {
+        username: updated.username,
+        fullName: updated.fullName,
+        email: updated.email,
+        avatar: updated.avatar
+      }, true);
+      if (res && res.token) {
+        setAuthToken(res.token);
+      }
+      if (res && res.user) {
+        setCurrentUser(prev => ({
+          ...prev,
+          username: res.user.username,
+          fullName: res.user.fullName,
+          email: res.user.email,
+          avatar: res.user.avatar,
+          role: res.user.role
+        }));
+      }
+      return res;
+    } catch (err: any) {
+      console.error("Lỗi cập nhật hồ sơ người dùng:", err);
+      throw err;
+    }
   };
 
   // Add score from Quiz
@@ -496,6 +618,8 @@ export default function App() {
       vocab: "Từ Vựng Tiếng Anh",
       flashcard: "Học Flashcard",
       quiz: "Luyện Tập Từ Vựng",
+      grammar: "Ngữ Pháp & 12 Thì",
+      dictation: "Luyện Chép Chính Tả",
       exam: "Luyện Đề Thi",
       pronounce: "Luyện Phát Âm",
       profile: "Hồ Sơ Cá Nhân",
@@ -514,6 +638,8 @@ export default function App() {
       vocab: "English Vocabulary",
       flashcard: "Learn Flashcards",
       quiz: "Vocabulary Practice",
+      grammar: "12 Tenses & Grammar",
+      dictation: "Dictation Practice",
       exam: "Take Practice Exams",
       pronounce: "Pronounce IPA",
       profile: "Personal Profile",
@@ -532,6 +658,8 @@ export default function App() {
       vocab: "英単語学習",
       flashcard: "フラッシュカード",
       quiz: "単語クイズ練習",
+      grammar: "英文法・12時制",
+      dictation: "ディクテーション練習",
       exam: "模擬試験テスト",
       pronounce: "発音練習ガイド",
       profile: "マイプロファイル",
@@ -553,43 +681,68 @@ export default function App() {
     }`}>
       
       {/* Top Professional Header */}
-      <header className={`border-b py-3.5 px-6 flex items-center justify-between sticky top-0 z-30 shadow-xs transition-colors ${
+      <header className={`border-b py-3 px-4 sm:px-6 flex items-center justify-between sticky top-0 z-30 shadow-xs transition-colors ${
         darkMode ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-100'
       }`}>
-        <div className="flex items-center space-x-3">
-          <div className="w-9 h-9 bg-indigo-600 rounded-xl flex items-center justify-center text-white font-black text-lg shadow-md shadow-indigo-200">
+        <div className="flex items-center space-x-2 sm:space-x-3">
+          {/* Mobile Hamburger Toggle Button */}
+          {isLoggedIn && (
+            <button
+              type="button"
+              onClick={() => setIsMobileMenuOpen(prev => !prev)}
+              className={`p-2 -ml-1 rounded-xl md:hidden transition active:scale-95 ${
+                darkMode ? 'text-slate-300 hover:bg-slate-800' : 'text-slate-600 hover:bg-slate-100'
+              }`}
+              title="Menu điều hướng"
+              aria-label="Toggle navigation menu"
+            >
+              {isMobileMenuOpen ? <X className="w-5 h-5 text-rose-500" /> : <Menu className="w-5 h-5" />}
+            </button>
+          )}
+
+          <div className="w-8 h-8 sm:w-9 sm:h-9 bg-indigo-600 rounded-xl flex items-center justify-center text-white font-black text-base sm:text-lg shadow-md shadow-indigo-200">
             E
           </div>
           <div>
-            <h1 className={`text-base font-bold tracking-tight flex items-center gap-2 ${
+            <h1 className={`text-sm sm:text-base font-bold tracking-tight flex items-center gap-2 ${
               darkMode ? 'text-white' : 'text-slate-800'
             }`}>
               <span>ENGStudy Hub</span>
             </h1>
-            <p className="text-[10px] text-slate-400 font-medium">{uiTranslations.siteHeaderSub}</p>
+            <p className="text-[9px] sm:text-[10px] text-slate-400 font-medium hidden xs:block">{uiTranslations.siteHeaderSub}</p>
           </div>
         </div>
 
-
-
         {/* User Badge / Profile dropdown */}
         {isLoggedIn ? (
-          <div className="flex items-center space-x-3">
+          <div className="flex items-center space-x-2 sm:space-x-3">
             <div className="hidden md:block text-right">
               <p className={`text-xs font-extrabold ${darkMode ? 'text-white' : 'text-slate-700'}`}>{currentUser.fullName}</p>
               <p className="text-[9px] text-slate-400 font-bold uppercase tracking-wider">{currentUser.role} account</p>
             </div>
+            {/* Quick Dark/Light Mode Toggle */}
+            <button
+              onClick={handleToggleDarkMode}
+              className={`p-2 rounded-xl transition active:scale-95 cursor-pointer ${
+                darkMode ? 'bg-slate-800 text-amber-300 hover:bg-slate-700' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+              }`}
+              title={darkMode ? 'Chuyển sang giao diện Sáng' : 'Chuyển sang giao diện Tối'}
+            >
+              {darkMode ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+            </button>
+
             <button
               onClick={() => {
                 setActiveTab('settings');
                 setCurrentMode('APP');
+                setIsMobileMenuOpen(false);
               }}
-              className="w-8.5 h-8.5 rounded-full overflow-hidden border border-slate-200 cursor-pointer active:scale-95"
+              className="w-8 h-8 sm:w-8.5 sm:h-8.5 rounded-full overflow-hidden border border-slate-200 cursor-pointer active:scale-95"
             >
               <img src={currentUser.avatar} alt={currentUser.fullName} className="object-cover w-full h-full" referrerPolicy="no-referrer" />
             </button>
             <button
-              onClick={() => setIsLoggedIn(false)}
+              onClick={handleLogout}
               className={`p-1.5 rounded-lg transition ${
                 darkMode ? 'bg-slate-800 hover:bg-rose-950/40 text-slate-400 hover:text-rose-500' : 'bg-slate-50 hover:bg-rose-50 text-slate-400 hover:text-rose-500'
               }`}
@@ -639,7 +792,10 @@ export default function App() {
                       type="text"
                       className="w-full bg-transparent border-b border-white/35 focus:border-white focus:outline-none py-2 text-sm text-white placeholder-slate-300/60 transition"
                       value={loginUsername}
-                      onChange={e => setLoginUsername(e.target.value)}
+                      onChange={e => {
+                        setLoginUsername(e.target.value);
+                        if (errorMsg) setErrorMsg('');
+                      }}
                       required
                       placeholder="Nhập tên đăng nhập..."
                     />
@@ -651,7 +807,10 @@ export default function App() {
                         type={showLoginPassword ? "text" : "password"}
                         className="w-full bg-transparent border-b border-white/35 focus:border-white focus:outline-none py-2 pr-10 text-sm text-white placeholder-slate-300/60 font-mono transition"
                         value={loginPassword}
-                        onChange={e => setLoginPassword(e.target.value)}
+                        onChange={e => {
+                          setLoginPassword(e.target.value);
+                          if (errorMsg) setErrorMsg('');
+                        }}
                         required
                         placeholder="••••••••"
                       />
@@ -935,17 +1094,45 @@ export default function App() {
         </main>
       ) : (
         /* Regular Application Workspace with Sidebars */
-        <div id="app-workspace" className="flex-1 max-w-7xl w-full mx-auto flex flex-col md:flex-row">
-          {/* Side Navigation panel */}
-          <aside className={`w-full md:w-64 p-5 flex flex-col justify-between shrink-0 transition-colors ${
-            darkMode ? 'bg-slate-900 border-r border-slate-800 text-slate-300' : 'bg-indigo-950 text-slate-300 md:border-r border-indigo-900'
-          }`}>
+        <div id="app-workspace" className="flex-1 w-full flex min-h-0 overflow-x-hidden relative">
+          {/* Mobile Backdrop Overlay */}
+          {isMobileMenuOpen && (
+            <div 
+              className="fixed inset-0 bg-slate-950/60 backdrop-blur-xs z-40 md:hidden transition-opacity duration-300"
+              onClick={() => setIsMobileMenuOpen(false)}
+            />
+          )}
+
+          {/* Side Navigation panel: Responsive Slide Drawer on Mobile, Docked Sidebar on Desktop */}
+          <aside className={`
+            fixed inset-y-0 left-0 z-50 w-72 p-5 flex flex-col justify-between transition-transform duration-300 ease-in-out md:static md:translate-x-0 md:w-64 md:shrink-0 md:flex shadow-2xl md:shadow-none overflow-y-auto
+            ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}
+            ${darkMode ? 'bg-slate-900 border-r border-slate-800 text-slate-300' : 'bg-indigo-950 text-slate-300 md:border-r border-indigo-900'}
+          `}>
+            {/* Mobile Drawer Header */}
+            <div className="flex items-center justify-between pb-3 mb-2 border-b border-indigo-900/60 md:hidden">
+              <div className="flex items-center space-x-2">
+                <div className="w-7 h-7 bg-indigo-600 rounded-lg flex items-center justify-center text-white font-black text-xs">E</div>
+                <span className="text-xs font-black text-white tracking-wider">ENGStudy Hub</span>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsMobileMenuOpen(false)}
+                className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-indigo-900/50"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
             <div className="space-y-1">
               <span className="text-[10px] font-bold text-indigo-400 uppercase tracking-wider px-3 block mb-3">{uiTranslations.menuTitle}</span>
               
               {/* Dashboard */}
               <button
-                onClick={() => setActiveTab('dashboard')}
+                onClick={() => {
+                  setActiveTab('dashboard');
+                  setIsMobileMenuOpen(false);
+                }}
                 className={`w-full flex items-center space-x-3 px-4 py-3 rounded-xl text-xs font-bold transition active:scale-95 ${
                   activeTab === 'dashboard'
                     ? (darkMode ? 'bg-indigo-700 text-white shadow-lg shadow-indigo-950/40' : 'bg-indigo-800 text-white shadow-lg shadow-indigo-950/40')
@@ -958,7 +1145,10 @@ export default function App() {
 
               {/* Vocabularies */}
               <button
-                onClick={() => setActiveTab('vocab')}
+                onClick={() => {
+                  setActiveTab('vocab');
+                  setIsMobileMenuOpen(false);
+                }}
                 className={`w-full flex items-center space-x-3 px-4 py-3 rounded-xl text-xs font-bold transition active:scale-95 ${
                   activeTab === 'vocab'
                     ? (darkMode ? 'bg-indigo-700 text-white shadow-lg shadow-indigo-950/40' : 'bg-indigo-800 text-white shadow-lg shadow-indigo-950/40')
@@ -971,7 +1161,10 @@ export default function App() {
 
               {/* Flashcard */}
               <button
-                onClick={() => setActiveTab('flashcard')}
+                onClick={() => {
+                  setActiveTab('flashcard');
+                  setIsMobileMenuOpen(false);
+                }}
                 className={`w-full flex items-center space-x-3 px-4 py-3 rounded-xl text-xs font-bold transition active:scale-95 ${
                   activeTab === 'flashcard'
                     ? (darkMode ? 'bg-indigo-700 text-white shadow-lg shadow-indigo-950/40' : 'bg-indigo-800 text-white shadow-lg shadow-indigo-950/40')
@@ -984,7 +1177,10 @@ export default function App() {
 
               {/* Quiz */}
               <button
-                onClick={() => setActiveTab('quiz')}
+                onClick={() => {
+                  setActiveTab('quiz');
+                  setIsMobileMenuOpen(false);
+                }}
                 className={`w-full flex items-center space-x-3 px-4 py-3 rounded-xl text-xs font-bold transition active:scale-95 ${
                   activeTab === 'quiz'
                     ? (darkMode ? 'bg-indigo-700 text-white shadow-lg shadow-indigo-950/40' : 'bg-indigo-800 text-white shadow-lg shadow-indigo-950/40')
@@ -995,9 +1191,28 @@ export default function App() {
                 <span>{uiTranslations.quiz}</span>
               </button>
 
+              {/* Grammar & 12 Tenses */}
+              <button
+                onClick={() => {
+                  setActiveTab('grammar');
+                  setIsMobileMenuOpen(false);
+                }}
+                className={`w-full flex items-center space-x-3 px-4 py-3 rounded-xl text-xs font-bold transition active:scale-95 ${
+                  activeTab === 'grammar'
+                    ? (darkMode ? 'bg-indigo-700 text-white shadow-lg shadow-indigo-950/40' : 'bg-indigo-800 text-white shadow-lg shadow-indigo-950/40')
+                    : 'text-slate-300 hover:bg-indigo-900/60 hover:text-white'
+                }`}
+              >
+                <Compass className="w-4 h-4 text-amber-400" />
+                <span>{uiTranslations.grammar}</span>
+              </button>
+
               {/* Exam */}
               <button
-                onClick={() => setActiveTab('exam')}
+                onClick={() => {
+                  setActiveTab('exam');
+                  setIsMobileMenuOpen(false);
+                }}
                 className={`w-full flex items-center space-x-3 px-4 py-3 rounded-xl text-xs font-bold transition active:scale-95 ${
                   activeTab === 'exam'
                     ? (darkMode ? 'bg-indigo-700 text-white shadow-lg shadow-indigo-950/40' : 'bg-indigo-800 text-white shadow-lg shadow-indigo-950/40')
@@ -1010,7 +1225,10 @@ export default function App() {
 
               {/* Pronunciation */}
               <button
-                onClick={() => setActiveTab('pronounce')}
+                onClick={() => {
+                  setActiveTab('pronounce');
+                  setIsMobileMenuOpen(false);
+                }}
                 className={`w-full flex items-center space-x-3 px-4 py-3 rounded-xl text-xs font-bold transition active:scale-95 ${
                   activeTab === 'pronounce'
                     ? (darkMode ? 'bg-indigo-700 text-white shadow-lg shadow-indigo-950/40' : 'bg-indigo-800 text-white shadow-lg shadow-indigo-950/40')
@@ -1021,9 +1239,28 @@ export default function App() {
                 <span>{uiTranslations.pronounce}</span>
               </button>
 
+              {/* Dictation (Luyện chép chính tả) */}
+              <button
+                onClick={() => {
+                  setActiveTab('dictation');
+                  setIsMobileMenuOpen(false);
+                }}
+                className={`w-full flex items-center space-x-3 px-4 py-3 rounded-xl text-xs font-bold transition active:scale-95 ${
+                  activeTab === 'dictation'
+                    ? (darkMode ? 'bg-indigo-700 text-white shadow-lg shadow-indigo-950/40' : 'bg-indigo-800 text-white shadow-lg shadow-indigo-950/40')
+                    : 'text-slate-300 hover:bg-indigo-900/60 hover:text-white'
+                }`}
+              >
+                <Headphones className="w-4 h-4 text-teal-400" />
+                <span>{uiTranslations.dictation}</span>
+              </button>
+
               {/* Study Documents (Tài liệu học tập) */}
               <button
-                onClick={() => setActiveTab('document')}
+                onClick={() => {
+                  setActiveTab('document');
+                  setIsMobileMenuOpen(false);
+                }}
                 className={`w-full flex items-center space-x-3 px-4 py-3 rounded-xl text-xs font-bold transition active:scale-95 ${
                   activeTab === 'document'
                     ? (darkMode ? 'bg-indigo-700 text-white shadow-lg shadow-indigo-950/40' : 'bg-indigo-800 text-white shadow-lg shadow-indigo-950/40')
@@ -1036,7 +1273,10 @@ export default function App() {
 
               {/* Settings (Cài đặt) */}
               <button
-                onClick={() => setActiveTab('settings')}
+                onClick={() => {
+                  setActiveTab('settings');
+                  setIsMobileMenuOpen(false);
+                }}
                 className={`w-full flex items-center space-x-3 px-4 py-3 rounded-xl text-xs font-bold transition active:scale-95 ${
                   activeTab === 'settings'
                     ? (darkMode ? 'bg-indigo-700 text-white shadow-lg shadow-indigo-950/40' : 'bg-indigo-800 text-white shadow-lg shadow-indigo-950/40')
@@ -1049,7 +1289,10 @@ export default function App() {
 
               {/* Profile */}
               <button
-                onClick={() => setActiveTab('profile')}
+                onClick={() => {
+                  setActiveTab('profile');
+                  setIsMobileMenuOpen(false);
+                }}
                 className={`w-full flex items-center space-x-3 px-4 py-3 rounded-xl text-xs font-bold transition active:scale-95 ${
                   activeTab === 'profile'
                     ? (darkMode ? 'bg-indigo-700 text-white shadow-lg shadow-indigo-950/40' : 'bg-indigo-800 text-white shadow-lg shadow-indigo-950/40')
@@ -1061,11 +1304,15 @@ export default function App() {
               </button>
 
               {/* Admin panel if role ADMIN */}
-              {currentUser.role === 'ADMIN' && (
+              {currentUser.role?.toUpperCase() === 'ADMIN' && (
                 <div className="pt-4 border-t border-indigo-900/50 mt-4">
                   <span className="text-[10px] font-bold text-indigo-400 uppercase tracking-wider px-3 block mb-3">ADMIN PANEL</span>
                   <button
-                    onClick={() => setActiveTab('admin')}
+                    onClick={() => {
+                      setActiveTab('admin');
+                      setIsMobileMenuOpen(false);
+                      fetchUsers();
+                    }}
                     className={`w-full flex items-center space-x-3 px-4 py-3 rounded-xl text-xs font-bold transition active:scale-95 ${
                       activeTab === 'admin'
                         ? 'bg-rose-900 text-white shadow-lg shadow-rose-950/40'
@@ -1089,50 +1336,133 @@ export default function App() {
           </aside>
 
           {/* Interactive view switch panel */}
-          <main className="flex-1 p-4 md:p-8 overflow-y-auto">
-            {activeTab === 'dashboard' && (
-              <DashboardSection vocabularies={vocabularies} profile={currentUser} users={users} />
-            )}
-            {activeTab === 'vocab' && (
-              <VocabularySection
-                vocabularies={vocabularies}
-                onUpdateVocab={handleUpdateVocabularies}
-                isAdmin={currentUser.role === 'ADMIN'}
-              />
-            )}
-            {activeTab === 'flashcard' && (
-              <FlashcardSection vocabularies={vocabularies} onUpdateVocab={handleUpdateVocabularies} />
-            )}
-            {activeTab === 'quiz' && (
-              <QuizSection vocabularies={vocabularies} onAddScore={handleAddQuizScore} />
-            )}
-            {activeTab === 'exam' && (
-              <ExamSection onAddTestResult={handleAddTestResult} />
-            )}
-            {activeTab === 'pronounce' && (
-              <PronunciationSection vocabularies={vocabularies} onUpdateVocab={handleUpdateVocabularies} />
-            )}
-            {activeTab === 'profile' && (
-              <ProfileSection profile={currentUser} onUpdateProfile={handleUpdateProfile} />
-            )}
-            {activeTab === 'document' && (
-              <DocumentSection profile={currentUser} />
-            )}
-            {activeTab === 'settings' && (
-              <SettingsSection 
-                profile={currentUser} 
-                onUpdateProfile={handleUpdateProfile} 
-                onLogout={() => setIsLoggedIn(false)}
-                isDarkMode={darkMode}
-                onToggleDarkMode={handleToggleDarkMode}
-                currentLang={language}
-                onLanguageChange={(lang) => setLanguage(lang)}
-              />
-            )}
-            {activeTab === 'admin' && currentUser.role === 'ADMIN' && (
-              <AdminPanel users={users} onRefreshUsers={fetchUsers} />
-            )}
+          <main className="flex-1 min-w-0 p-3 sm:p-4 md:p-8 pb-24 md:pb-8 overflow-y-auto overflow-x-hidden">
+            <div className="max-w-7xl mx-auto w-full">
+              {activeTab === 'dashboard' && (
+                <DashboardSection vocabularies={vocabularies} profile={currentUser} users={users} />
+              )}
+              {activeTab === 'vocab' && (
+                <VocabularySection
+                  vocabularies={vocabularies}
+                  onUpdateVocab={handleUpdateVocabularies}
+                  isAdmin={currentUser.role?.toUpperCase() === 'ADMIN'}
+                  onRefresh={fetchVocabularies}
+                />
+              )}
+              {activeTab === 'flashcard' && (
+                <FlashcardSection vocabularies={vocabularies} onUpdateVocab={handleUpdateVocabularies} />
+              )}
+              {activeTab === 'quiz' && (
+                <QuizSection vocabularies={vocabularies} onAddScore={handleAddQuizScore} />
+              )}
+              {activeTab === 'grammar' && (
+                <GrammarSection />
+              )}
+              {activeTab === 'exam' && (
+                <ExamSection onAddTestResult={handleAddTestResult} />
+              )}
+              {activeTab === 'pronounce' && (
+                <PronunciationSection vocabularies={vocabularies} onUpdateVocab={handleUpdateVocabularies} />
+              )}
+              {activeTab === 'dictation' && (
+                <DictationSection />
+              )}
+              {activeTab === 'profile' && (
+                <ProfileSection profile={currentUser} onUpdateProfile={handleUpdateProfile} />
+              )}
+              {activeTab === 'document' && (
+                <DocumentSection profile={currentUser} />
+              )}
+              {activeTab === 'settings' && (
+                <SettingsSection 
+                  profile={currentUser} 
+                  onUpdateProfile={handleUpdateProfile} 
+                  onLogout={handleLogout}
+                  isDarkMode={darkMode}
+                  onToggleDarkMode={handleToggleDarkMode}
+                  currentLang={language}
+                  onLanguageChange={(lang) => setLanguage(lang)}
+                />
+              )}
+              {activeTab === 'admin' && currentUser.role?.toUpperCase() === 'ADMIN' && (
+                <AdminPanel users={users} onRefreshUsers={fetchUsers} />
+              )}
+            </div>
           </main>
+
+          {/* Mobile Bottom Navigation Bar (Chuẩn ứng dụng học tập di động phong cách Memrise/Duolingo) */}
+          <nav className={`fixed bottom-0 inset-x-0 z-30 md:hidden border-t px-2 py-1.5 flex items-center justify-around backdrop-blur-md transition-colors ${
+            darkMode ? 'bg-slate-900/95 border-slate-800 text-slate-400' : 'bg-white/95 border-slate-200 text-slate-500 shadow-lg'
+          }`}>
+            <button
+              type="button"
+              onClick={() => {
+                setActiveTab('dashboard');
+                setIsMobileMenuOpen(false);
+              }}
+              className={`flex flex-col items-center justify-center flex-1 py-1 px-1 rounded-xl transition active:scale-90 ${
+                activeTab === 'dashboard' ? 'text-indigo-600 dark:text-indigo-400 font-extrabold' : 'hover:text-slate-700 dark:hover:text-slate-200'
+              }`}
+            >
+              <LayoutDashboard className={`w-5 h-5 mb-0.5 ${activeTab === 'dashboard' ? 'scale-110' : ''}`} />
+              <span className="text-[10px] leading-tight">Tổng quan</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => {
+                setActiveTab('vocab');
+                setIsMobileMenuOpen(false);
+              }}
+              className={`flex flex-col items-center justify-center flex-1 py-1 px-1 rounded-xl transition active:scale-90 ${
+                activeTab === 'vocab' ? 'text-indigo-600 dark:text-indigo-400 font-extrabold' : 'hover:text-slate-700 dark:hover:text-slate-200'
+              }`}
+            >
+              <BookOpen className={`w-5 h-5 mb-0.5 ${activeTab === 'vocab' ? 'scale-110' : ''}`} />
+              <span className="text-[10px] leading-tight">Từ vựng</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => {
+                setActiveTab('flashcard');
+                setIsMobileMenuOpen(false);
+              }}
+              className={`flex flex-col items-center justify-center flex-1 py-1 px-1 rounded-xl transition active:scale-90 ${
+                activeTab === 'flashcard' ? 'text-indigo-600 dark:text-indigo-400 font-extrabold' : 'hover:text-slate-700 dark:hover:text-slate-200'
+              }`}
+            >
+              <div className={`p-1 rounded-xl ${activeTab === 'flashcard' ? 'bg-indigo-600 text-white shadow-md shadow-indigo-300' : ''}`}>
+                <Brain className="w-5 h-5" />
+              </div>
+              <span className="text-[10px] leading-tight mt-0.5">Flashcard</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => {
+                setActiveTab('quiz');
+                setIsMobileMenuOpen(false);
+              }}
+              className={`flex flex-col items-center justify-center flex-1 py-1 px-1 rounded-xl transition active:scale-90 ${
+                activeTab === 'quiz' || activeTab === 'exam' ? 'text-indigo-600 dark:text-indigo-400 font-extrabold' : 'hover:text-slate-700 dark:hover:text-slate-200'
+              }`}
+            >
+              <Sparkles className={`w-5 h-5 mb-0.5 ${activeTab === 'quiz' || activeTab === 'exam' ? 'scale-110' : ''}`} />
+              <span className="text-[10px] leading-tight">Luyện tập</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setIsMobileMenuOpen(prev => !prev)}
+              className={`flex flex-col items-center justify-center flex-1 py-1 px-1 rounded-xl transition active:scale-90 ${
+                isMobileMenuOpen ? 'text-indigo-600 dark:text-indigo-400 font-extrabold' : 'hover:text-slate-700 dark:hover:text-slate-200'
+              }`}
+            >
+              <Menu className="w-5 h-5 mb-0.5" />
+              <span className="text-[10px] leading-tight">Thêm</span>
+            </button>
+          </nav>
         </div>
       )}
 

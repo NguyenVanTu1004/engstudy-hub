@@ -1,4 +1,5 @@
 import { pool, isDbConnected } from "./db";
+import bcrypt from "bcryptjs";
 
 export interface DBUser {
   id: number;
@@ -17,59 +18,69 @@ export let memoryUsers: DBUser[] = [
   {
     id: 1,
     username: 'admin',
-    fullName: 'Nguyễn Văn Tứ',
-    email: 'admin@edu.vn',
-    password: 'admin',
+    fullName: 'Nguyễn Văn Admin',
+    email: 'nguyenvantu03848@gmail.com',
+    password: '$2a$10$wT0X7Vf8m8W8n3Vq7g5SfeO9l3Yw0s.g34qZ6j3rJtH5E5L7z1Qx.', // hashed 'VanTu1004@'
     role: 'ADMIN',
     isActive: true,
-    avatar: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100&auto=format&fit=crop&q=80',
+    avatar: 'https://api.dicebear.com/7.x/identicon/svg?seed=Mercury',
     createdAt: '2026-01-10'
-  },
-  {
-    id: 2,
-    username: 'tuan_nguyen',
-    fullName: 'Nguyễn Anh Tuấn',
-    email: 'tuanna@gmail.com',
-    password: '123',
-    role: 'USER',
-    isActive: true,
-    avatar: 'https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?w=100&auto=format&fit=crop&q=80',
-    createdAt: '2026-06-15'
   }
 ];
 
 export class UserModel {
-  static async getAll(): Promise<DBUser[]> {
+  static async verifyPassword(plainPassword: string, storedPassword?: string): Promise<boolean> {
+    if (!storedPassword) return false;
+    // Check if stored as bcrypt hash
+    if (storedPassword.startsWith("$2a$") || storedPassword.startsWith("$2b$")) {
+      return bcrypt.compare(plainPassword, storedPassword);
+    }
+    // Fallback plain-text comparison for legacy accounts
+    return plainPassword === storedPassword;
+  }
+
+  static async hashPassword(password: string): Promise<string> {
+    return bcrypt.hash(password, 10);
+  }
+
+  static async getAll(): Promise<Omit<DBUser, "password">[]> {
     if (isDbConnected && pool) {
       const [rows]: any = await pool.query(
         "SELECT id, username, full_name as fullName, email, role, is_active as isActive, avatar, created_at as createdAt FROM users ORDER BY id DESC"
       );
-      return rows;
+      return rows.map((r: any) => ({
+        ...r,
+        isActive: !!r.isActive
+      }));
     }
-    return memoryUsers;
+    return memoryUsers.map(({ password, ...u }) => u);
   }
 
-  static async findByUsernameAndPassword(username: string, password?: string): Promise<DBUser | null> {
+  static async findById(id: number): Promise<DBUser | null> {
     if (isDbConnected && pool) {
       const [rows]: any = await pool.query(
-        "SELECT id, username, full_name as fullName, email, role, is_active as isActive, avatar, created_at as createdAt FROM users WHERE LOWER(username) = LOWER(?) AND password = ?",
-        [username, password]
+        "SELECT id, username, full_name as fullName, email, password, role, is_active as isActive, avatar, created_at as createdAt FROM users WHERE id = ?",
+        [id]
       );
-      return rows[0] || null;
+      if (rows[0]) {
+        return { ...rows[0], isActive: !!rows[0].isActive };
+      }
+      return null;
     }
-    const user = memoryUsers.find(
-      u => u.username.toLowerCase() === username.toLowerCase() && u.password === password
-    );
+    const user = memoryUsers.find(u => u.id === id);
     return user || null;
   }
 
   static async findByUsername(username: string): Promise<DBUser | null> {
     if (isDbConnected && pool) {
       const [rows]: any = await pool.query(
-        "SELECT id, username, full_name as fullName, email, role, is_active as isActive, avatar, created_at as createdAt FROM users WHERE LOWER(username) = LOWER(?)",
+        "SELECT id, username, full_name as fullName, email, password, role, is_active as isActive, avatar, created_at as createdAt FROM users WHERE LOWER(username) = LOWER(?)",
         [username]
       );
-      return rows[0] || null;
+      if (rows[0]) {
+        return { ...rows[0], isActive: !!rows[0].isActive };
+      }
+      return null;
     }
     const user = memoryUsers.find(u => u.username.toLowerCase() === username.toLowerCase());
     return user || null;
@@ -78,34 +89,59 @@ export class UserModel {
   static async findByEmail(email: string): Promise<DBUser | null> {
     if (isDbConnected && pool) {
       const [rows]: any = await pool.query(
-        "SELECT id, username, full_name as fullName, email, role, is_active as isActive, avatar, created_at as createdAt FROM users WHERE LOWER(email) = LOWER(?)",
+        "SELECT id, username, full_name as fullName, email, password, role, is_active as isActive, avatar, created_at as createdAt FROM users WHERE LOWER(email) = LOWER(?)",
         [email]
       );
-      return rows[0] || null;
+      if (rows[0]) {
+        return { ...rows[0], isActive: !!rows[0].isActive };
+      }
+      return null;
     }
     const user = memoryUsers.find(u => u.email.toLowerCase() === email.toLowerCase());
     return user || null;
   }
 
-  static async create(user: Omit<DBUser, "id">): Promise<boolean> {
+  static async create(user: Omit<DBUser, "id">): Promise<DBUser> {
+    const hashedPassword = user.password ? await this.hashPassword(user.password) : "";
+    const today = user.createdAt || new Date().toISOString().split("T")[0];
+
     if (isDbConnected && pool) {
-      await pool.query(
+      const [result]: any = await pool.query(
         "INSERT INTO users (username, full_name, email, password, role, is_active, avatar, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
-        [user.username, user.fullName, user.email, user.password || "", user.role, user.isActive ? 1 : 0, user.avatar, user.createdAt]
+        [user.username, user.fullName, user.email, hashedPassword, user.role, user.isActive ? 1 : 0, user.avatar, today]
       );
-      return true;
+      return {
+        id: result.insertId,
+        username: user.username,
+        fullName: user.fullName,
+        email: user.email,
+        role: user.role,
+        isActive: user.isActive,
+        avatar: user.avatar,
+        createdAt: today
+      };
     }
     
-    const newUser = {
+    const newUser: DBUser = {
       id: Date.now(),
-      ...user
+      ...user,
+      password: hashedPassword,
+      createdAt: today
     };
     memoryUsers.push(newUser);
-    return true;
+    return newUser;
   }
 
   static async update(id: number, data: Partial<Omit<DBUser, "id">>): Promise<boolean> {
+    let hashedPassword: string | undefined = undefined;
+    if (data.password) {
+      hashedPassword = await this.hashPassword(data.password);
+    }
+
     if (isDbConnected && pool) {
+      if (data.username !== undefined) {
+        await pool.query("UPDATE users SET username = ? WHERE id = ?", [data.username, id]);
+      }
       if (data.role !== undefined) {
         await pool.query("UPDATE users SET role = ? WHERE id = ?", [data.role, id]);
       }
@@ -121,8 +157,8 @@ export class UserModel {
       if (data.avatar !== undefined) {
         await pool.query("UPDATE users SET avatar = ? WHERE id = ?", [data.avatar, id]);
       }
-      if (data.password !== undefined) {
-        await pool.query("UPDATE users SET password = ? WHERE id = ?", [data.password, id]);
+      if (hashedPassword !== undefined) {
+        await pool.query("UPDATE users SET password = ? WHERE id = ?", [hashedPassword, id]);
       }
       return true;
     }
@@ -131,12 +167,24 @@ export class UserModel {
       if (u.id === id) {
         return {
           ...u,
-          ...data
+          ...data,
+          ...(hashedPassword ? { password: hashedPassword } : {})
         };
       }
       return u;
     });
     return true;
+  }
+
+  static async upgradeLegacyPassword(id: number, plainPassword: string): Promise<void> {
+    try {
+      const hashedPassword = await this.hashPassword(plainPassword);
+      if (isDbConnected && pool) {
+        await pool.query("UPDATE users SET password = ? WHERE id = ?", [hashedPassword, id]);
+      }
+    } catch (e) {
+      console.warn("Could not auto-upgrade legacy password:", e);
+    }
   }
 
   static async delete(id: number): Promise<boolean> {

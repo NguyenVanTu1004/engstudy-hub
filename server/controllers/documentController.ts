@@ -1,8 +1,9 @@
-import { Request, Response } from "express";
+import { Response } from "express";
 import { DocumentModel } from "../models/documentModel";
+import { AuthenticatedRequest } from "../middleware/authMiddleware";
 
 export class DocumentController {
-  static async getDocuments(req: Request, res: Response) {
+  static async getDocuments(req: AuthenticatedRequest, res: Response) {
     try {
       const documents = await DocumentModel.getAll();
       return res.json({ success: true, documents });
@@ -11,7 +12,7 @@ export class DocumentController {
     }
   }
 
-  static async createDocument(req: Request, res: Response) {
+  static async createDocument(req: AuthenticatedRequest, res: Response) {
     const { title, description, content, category, downloadUrl } = req.body;
 
     if (!title || !content) {
@@ -33,8 +34,12 @@ export class DocumentController {
     }
   }
 
-  static async deleteDocument(req: Request, res: Response) {
+  static async deleteDocument(req: AuthenticatedRequest, res: Response) {
     const id = parseInt(req.params.id);
+
+    if (isNaN(id)) {
+      return res.status(400).json({ success: false, message: "ID tài liệu không hợp lệ!" });
+    }
 
     try {
       const ok = await DocumentModel.delete(id);

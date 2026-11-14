@@ -1,5 +1,5 @@
 export interface Vocabulary {
-  id: number;
+  id: number | string;
   word: string;
   ipa: string;
   meaning: string;
@@ -18,8 +18,8 @@ export interface Vocabulary {
 export interface FlashcardState {
   currentIndex: number;
   isFlipped: boolean;
-  knownIds: number[];
-  unknownIds: number[];
+  knownIds: (number | string)[];
+  unknownIds: (number | string)[];
 }
 
 export interface Question {
@@ -48,6 +48,8 @@ export interface ExamResult {
   totalQuestions: number;
   timeSpent: string;
   date: string;
+  minutes?: number;
+  duration_minutes?: number;
 }
 
 export interface StudySession {

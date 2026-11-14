@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { UserProfile } from '../types';
+import { api } from '../services/api';
 import { 
   BookOpen, 
   Search, 
@@ -58,8 +59,7 @@ export default function DocumentSection({ profile }: DocumentSectionProps) {
   const fetchDocs = async () => {
     setLoading(true);
     try {
-      const res = await fetch('/api/documents');
-      const data = await res.json();
+      const data = await api.get('/api/documents');
       if (data.success) {
         setDocuments(data.documents);
       } else {
@@ -85,18 +85,13 @@ export default function DocumentSection({ profile }: DocumentSectionProps) {
     }
 
     try {
-      const res = await fetch('/api/documents', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          title: newTitle,
-          description: newDescription,
-          category: newCategory,
-          content: newContent,
-          downloadUrl: newDownloadUrl
-        })
-      });
-      const data = await res.json();
+      const data = await api.post('/api/documents', {
+        title: newTitle,
+        description: newDescription,
+        category: newCategory,
+        content: newContent,
+        downloadUrl: newDownloadUrl
+      }, true);
       if (data.success) {
         setSuccessMsg(data.message || 'Đăng tài liệu thành công!');
         setNewTitle('');
@@ -121,10 +116,7 @@ export default function DocumentSection({ profile }: DocumentSectionProps) {
     }
 
     try {
-      const res = await fetch(`/api/documents/${id}`, {
-        method: 'DELETE'
-      });
-      const data = await res.json();
+      const data = await api.delete(`/api/documents/${id}`, true);
       if (data.success) {
         setSuccessMsg(data.message || 'Đã xóa tài liệu thành công!');
         fetchDocs();

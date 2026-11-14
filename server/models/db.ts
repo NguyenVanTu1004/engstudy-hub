@@ -1,18 +1,21 @@
 import mysql from "mysql2/promise";
 import dotenv from "dotenv";
+import bcrypt from "bcryptjs";
+import fs from "fs";
+import path from "path";
 
 dotenv.config();
 
 export let isDbConnected = false;
-// Parse environment variables with robust fallback support
 export let dbErrorDetails: string = "";
-let rawHost = process.env.DB_HOST || "127.0.0.1";
+
+let rawHost = process.env.DATABASE_URL || process.env.MYSQL_URL || process.env.DB_URL || process.env.DB_HOST || "127.0.0.1";
 let rawPort = parseInt(process.env.DB_PORT || "3307");
 let rawUser = process.env.DB_USER || process.env.DB_USERNAME || "root";
 let rawPassword = process.env.DB_PASSWORD || "";
 let rawDatabase = process.env.DB_NAME || process.env.DB_DATABASE || "english_learning";
 
-// Smart parsing if DB_HOST contains a full connection URL (e.g. mysql://user:pass@host:port/database)
+// Smart parsing if rawHost contains a full connection URL (e.g. mysql://user:pass@host:port/dbname)
 if (rawHost.startsWith("mysql://") || rawHost.startsWith("mysql:")) {
   try {
     const url = new URL(rawHost);
@@ -34,9 +37,10 @@ if (rawHost.startsWith("mysql://") || rawHost.startsWith("mysql:")) {
     }
     console.log("🔌 Successfully parsed MySQL Connection String!");
   } catch (e: any) {
-    console.warn("⚠️ Cannot parse DB_HOST as URL, treating as literal string. Error:", e.message);
+    console.warn("⚠️ Cannot parse DB connection string as URL, treating as literal string. Error:", e.message);
   }
 }
+
 export const dbConfigUsed = {
   host: rawHost,
   port: rawPort,
@@ -44,28 +48,34 @@ export const dbConfigUsed = {
   password: rawPassword,
   database: rawDatabase
 };
+
 export let pool: mysql.Pool | null = null;
 
 export async function initDatabase() {
   try {
     console.log(`📡 Connecting to MySQL database at ${dbConfigUsed.host}:${dbConfigUsed.port}...`);
     
+    const useSsl = process.env.DB_SSL === "true" || rawHost.includes("aivencloud") || rawHost.includes("tidbcloud") || rawHost.includes("clever-cloud") || rawHost.includes("rlwy.net");
+
     pool = mysql.createPool({
       host: dbConfigUsed.host,
       port: dbConfigUsed.port,
       user: dbConfigUsed.user,
       password: dbConfigUsed.password,
       database: dbConfigUsed.database,
+      ssl: useSsl ? { rejectUnauthorized: false } : undefined,
       waitForConnections: true,
-      connectionLimit: 5, 
+      connectionLimit: 10,
       queueLimit: 0,
-      connectTimeout: 5000
+      connectTimeout: 10000,
+      enableKeepAlive: true,
+      keepAliveInitialDelay: 0
     });
 
     const connection = await pool.getConnection();
     connection.release();
     isDbConnected = true;
-    console.log("✅ MySQL Database connected successfully on port " + dbConfigUsed.port);
+    console.log(`✅ MySQL Database connected successfully [${dbConfigUsed.database}] on port ${dbConfigUsed.port}`);
 
     await createTablesIfNotExist();
   } catch (error: any) {
@@ -88,7 +98,7 @@ async function createTablesIfNotExist() {
         full_name VARCHAR(100) NOT NULL,
         email VARCHAR(100) NOT NULL,
         password VARCHAR(255) NOT NULL,
-        role VARCHAR(10) DEFAULT 'USER',
+        role VARCHAR(20) DEFAULT 'USER',
         is_active BOOLEAN DEFAULT TRUE,
         avatar VARCHAR(255) DEFAULT '',
         created_at DATE NOT NULL
@@ -98,7 +108,7 @@ async function createTablesIfNotExist() {
     // 2. Vocabularies Table
     await pool.query(`
       CREATE TABLE IF NOT EXISTS vocabularies (
-        id INT AUTO_INCREMENT PRIMARY KEY,
+        id VARCHAR(50) PRIMARY KEY,
         word VARCHAR(100) NOT NULL,
         ipa VARCHAR(100),
         meaning TEXT NOT NULL,
@@ -113,17 +123,63 @@ async function createTablesIfNotExist() {
       ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
     `);
 
-    // 3. OTPs Table
+    // 3. User Vocabulary Progress (Real per-user learning tracking)
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS user_vocabulary_progress (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        user_id INT NOT NULL,
+        vocabulary_id VARCHAR(50) NOT NULL,
+        is_learned BOOLEAN DEFAULT FALSE,
+        is_favorite BOOLEAN DEFAULT FALSE,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+        UNIQUE KEY uk_user_vocab (user_id, vocabulary_id),
+        INDEX idx_user_learned (user_id, is_learned),
+        INDEX idx_user_fav (user_id, is_favorite)
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+    `);
+
+    // 4. Exam Results Table (Real persistence of test submissions)
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS exam_results (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        user_id INT NOT NULL,
+        exam_title VARCHAR(255) NOT NULL,
+        category VARCHAR(50) NOT NULL,
+        score INT NOT NULL,
+        correct_answers INT NOT NULL,
+        total_questions INT NOT NULL,
+        time_spent VARCHAR(50) NOT NULL,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        INDEX idx_user_exam (user_id, created_at)
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+    `);
+
+    // 5. Study Sessions Table (Real user activity & charts)
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS study_sessions (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        user_id INT NOT NULL,
+        study_date DATE NOT NULL,
+        minutes INT DEFAULT 0,
+        words_learned INT DEFAULT 0,
+        score INT DEFAULT 0,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        UNIQUE KEY uk_user_date (user_id, study_date)
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+    `);
+
+    // 6. OTPs Table
     await pool.query(`
       CREATE TABLE IF NOT EXISTS otps (
         id INT AUTO_INCREMENT PRIMARY KEY,
         email VARCHAR(100) NOT NULL,
         otp VARCHAR(6) NOT NULL,
-        expires_at BIGINT NOT NULL
+        expires_at BIGINT NOT NULL,
+        INDEX idx_email_expires (email, expires_at)
       ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
     `);
 
-    // 4. Study Documents Table
+    // 7. Study Documents Table
     await pool.query(`
       CREATE TABLE IF NOT EXISTS study_documents (
         id INT AUTO_INCREMENT PRIMARY KEY,
@@ -136,19 +192,56 @@ async function createTablesIfNotExist() {
       ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
     `);
 
-    console.log("⚙️ Verified and initialized MySQL schemas (users, vocabularies, otps, study_documents).");
+    // Auto-seed 6,586 vocabularies if table is empty
+    const [vocabRows]: any = await pool.query("SELECT COUNT(*) as count FROM vocabularies");
+    if (vocabRows[0].count === 0) {
+      console.log("📥 Auto-seeding 6,586 vocabularies into newly connected MySQL database...");
+      const seedPath = path.join(process.cwd(), "server", "data", "default_vocabularies.json");
+      if (fs.existsSync(seedPath)) {
+        const seedData: any[] = JSON.parse(fs.readFileSync(seedPath, "utf-8"));
+        const batchSize = 1000;
+        for (let i = 0; i < seedData.length; i += batchSize) {
+          const chunk = seedData.slice(i, i + batchSize);
+          const values = chunk.map(v => [
+            String(v.id),
+            v.word,
+            v.ipa || '',
+            v.meaning,
+            v.partOfSpeech || 'Noun',
+            v.example || '',
+            v.exampleMeaning || '',
+            v.image || '',
+            v.difficulty || 'Medium',
+            v.isLearned ? 1 : 0,
+            v.topic || 'General',
+            v.createdAt || new Date().toISOString().split('T')[0]
+          ]);
+          await pool.query(`
+            INSERT INTO vocabularies (id, word, ipa, meaning, part_of_speech, example, example_meaning, image, difficulty, is_learned, topic, created_at)
+            VALUES ?
+            ON DUPLICATE KEY UPDATE word = VALUES(word)
+          `, [values]);
+        }
+        console.log(`✅ Successfully seeded ${seedData.length} vocabularies into MySQL database!`);
+      }
+    }
 
-    // Insert Default admin user if empty
+    console.log("⚙️ Verified production MySQL schemas (users, vocabularies, user_vocabulary_progress, exam_results, study_sessions, otps, study_documents).");
+
+    // Insert Default admin user & sample members if empty or only admin
     const [rows]: any = await pool.query("SELECT COUNT(*) as count FROM users");
     if (rows[0].count === 0) {
+      const defaultHashedPassword = await bcrypt.hash("VanTu1004@", 10);
+      const userHashedPassword = await bcrypt.hash("123456", 10);
       await pool.query(`
         INSERT INTO users (username, full_name, email, password, role, is_active, avatar, created_at)
-        VALUES ('admin', 'Nguyễn Văn Admin', 'nguyenvantu03848@gmail.com', 'admin', 'ADMIN', 1, 'https://api.dicebear.com/7.x/identicon/svg?seed=Mercury', CURRENT_DATE())
-      `);
-      console.log("👤 Inserted default administrator account.");
-    } else {
-      // Force update existing admin email to nguyenvantu03848@gmail.com & update existing admin avatar to be neutral as well
-      await pool.query("UPDATE users SET email = 'nguyenvantu03848@gmail.com', avatar = 'https://api.dicebear.com/7.x/identicon/svg?seed=Mercury' WHERE username = 'admin'");
+        VALUES 
+        ('admin', 'Nguyễn Văn Tứ', 'nguyenvantu03848@gmail.com', ?, 'ADMIN', 1, 'https://api.dicebear.com/7.x/identicon/svg?seed=Mercury', CURRENT_DATE()),
+        ('tuan_nguyen', 'Nguyễn Anh Tuấn', 'tuanna@gmail.com', ?, 'USER', 1, 'https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?w=100&auto=format&fit=crop&q=80', CURRENT_DATE()),
+        ('lan_anh', 'Trần Lan Anh', 'lananh99@yahoo.com', ?, 'USER', 0, 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100&auto=format&fit=crop&q=80', CURRENT_DATE()),
+        ('hoang_long', 'Phạm Hoàng Long', 'longph@outlook.com', ?, 'USER', 1, 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&auto=format&fit=crop&q=80', CURRENT_DATE())
+      `, [defaultHashedPassword, userHashedPassword, userHashedPassword, userHashedPassword]);
+      console.log("👤 Seeded default administrator and sample members into database.");
     }
 
     // Insert Default study documents if empty
