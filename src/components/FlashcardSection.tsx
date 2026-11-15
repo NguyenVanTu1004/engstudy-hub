@@ -122,15 +122,29 @@ export default function FlashcardSection({ vocabularies, onUpdateVocab }: Flashc
   };
 
   // -------------------------------------------------------------
-  // AUDIO PRONUNCIATION (Speech Synthesis)
+  // AUDIO PRONUNCIATION (Speech Synthesis with Voice Selection)
   // -------------------------------------------------------------
-  const playAudio = useCallback((text: string, rate = 0.9, e?: React.MouseEvent) => {
+  const [isPlayingAudio, setIsPlayingAudio] = useState(false);
+
+  const playAudio = useCallback((text: string, rate = 0.95, e?: React.MouseEvent) => {
     e?.stopPropagation();
     if ('speechSynthesis' in window) {
       window.speechSynthesis.cancel();
       const utterance = new SpeechSynthesisUtterance(text);
       utterance.lang = 'en-US';
       utterance.rate = rate;
+
+      // Select high quality native voice if available
+      const voices = window.speechSynthesis.getVoices();
+      const nativeVoice = voices.find(v => v.lang === 'en-US' || v.lang === 'en-GB' || v.lang.startsWith('en'));
+      if (nativeVoice) {
+        utterance.voice = nativeVoice;
+      }
+
+      setIsPlayingAudio(true);
+      utterance.onend = () => setIsPlayingAudio(false);
+      utterance.onerror = () => setIsPlayingAudio(false);
+
       window.speechSynthesis.speak(utterance);
     }
   }, []);
@@ -694,23 +708,45 @@ export default function FlashcardSection({ vocabularies, onUpdateVocab }: Flashc
                     <h2 className="text-4xl sm:text-5xl font-black text-slate-900 tracking-tight">
                       {current.word}
                     </h2>
-                    <button
-                      type="button"
-                      onClick={e => playAudio(current.word, 0.9, e)}
-                      className="p-3 bg-indigo-50 hover:bg-indigo-100 active:scale-95 text-indigo-600 rounded-full transition shadow-sm cursor-pointer"
-                      title="Phát âm tiếng Anh chuẩn (US/UK)"
-                    >
-                      <Volume2 className="w-5 h-5" />
-                    </button>
                   </div>
 
-                  {current.ipa && (
-                    <div className="flex items-center justify-center space-x-2">
-                      <span className="text-base font-mono text-indigo-600 font-semibold bg-indigo-50/70 px-3.5 py-1.5 rounded-xl border border-indigo-100">
+                  {/* Phonetic Transcription (IPA) & Audio Buttons */}
+                  <div className="flex items-center justify-center flex-wrap gap-2.5 pt-1">
+                    {current.ipa ? (
+                      <span className="text-base sm:text-lg font-mono text-indigo-700 font-bold bg-indigo-50/90 px-4 py-1.5 rounded-xl border border-indigo-200/90 shadow-xs tracking-wider">
                         {current.ipa}
                       </span>
-                    </div>
-                  )}
+                    ) : (
+                      <span className="text-xs font-mono text-slate-400 bg-slate-100 px-3 py-1.5 rounded-xl">
+                        /{current.word.toLowerCase()}/
+                      </span>
+                    )}
+
+                    {/* Standard Speed (1.0x) Audio */}
+                    <button
+                      type="button"
+                      onClick={e => playAudio(current.word, 0.95, e)}
+                      className={`inline-flex items-center space-x-1.5 px-3.5 py-1.5 rounded-xl text-xs font-bold transition shadow-xs cursor-pointer active:scale-95 ${
+                        isPlayingAudio
+                          ? 'bg-indigo-600 text-white animate-pulse'
+                          : 'bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200/70'
+                      }`}
+                      title="Phát âm chuẩn người bản xứ (Phím R)"
+                    >
+                      <Volume2 className="w-4 h-4" />
+                      <span>Nghe chuẩn</span>
+                    </button>
+
+                    {/* Slow Speed (0.75x) Audio */}
+                    <button
+                      type="button"
+                      onClick={e => playAudio(current.word, 0.72, e)}
+                      className="inline-flex items-center space-x-1 px-3 py-1.5 bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-200/80 rounded-xl text-xs font-bold transition shadow-xs cursor-pointer active:scale-95"
+                      title="Nghe tốc độ chậm 0.75x để nghe rõ từng âm tiết"
+                    >
+                      <span>🐢 Nghe chậm</span>
+                    </button>
+                  </div>
 
                   {current.difficulty && (
                     <span className="inline-block text-[10px] font-bold uppercase tracking-wider text-slate-400">
