@@ -33,8 +33,49 @@ function loadDefaultVocabularies(): DBVocabulary[] {
   return [];
 }
 
+const USER_PROGRESS_PATH = path.join(process.cwd(), "server", "data", "user_progress_store.json");
+
+function loadUserProgressStore(): { [key: string]: { isLearned: boolean; isFavorite: boolean } } {
+  try {
+    if (fs.existsSync(USER_PROGRESS_PATH)) {
+      const data = fs.readFileSync(USER_PROGRESS_PATH, "utf-8");
+      const list = JSON.parse(data);
+      if (Array.isArray(list)) {
+        const map: { [key: string]: { isLearned: boolean; isFavorite: boolean } } = {};
+        for (const item of list) {
+          map[`${item.userId}_${item.vocabId}`] = {
+            isLearned: !!item.isLearned,
+            isFavorite: !!item.isFavorite
+          };
+        }
+        return map;
+      }
+    }
+  } catch (err: any) {
+    console.warn("⚠️ Could not load user_progress_store.json:", err.message);
+  }
+  return {};
+}
+
+function saveUserProgressStore(map: { [key: string]: { isLearned: boolean; isFavorite: boolean } }) {
+  try {
+    const list = Object.entries(map).map(([k, v]) => {
+      const [userId, vocabId] = k.split("_");
+      return {
+        userId: parseInt(userId),
+        vocabId,
+        isLearned: v.isLearned ? 1 : 0,
+        isFavorite: v.isFavorite ? 1 : 0
+      };
+    });
+    fs.writeFileSync(USER_PROGRESS_PATH, JSON.stringify(list, null, 2), "utf-8");
+  } catch (err: any) {
+    console.warn("⚠️ Could not save user_progress_store.json:", err.message);
+  }
+}
+
 export let memoryVocabularies: DBVocabulary[] = loadDefaultVocabularies();
-let memoryUserProgress: { [key: string]: { isLearned: boolean; isFavorite: boolean } } = {};
+let memoryUserProgress: { [key: string]: { isLearned: boolean; isFavorite: boolean } } = loadUserProgressStore();
 
 export class VocabularyModel {
   static async getAll(userId?: number): Promise<DBVocabulary[]> {
@@ -122,6 +163,7 @@ export class VocabularyModel {
     const curr = memoryUserProgress[key] || { isLearned: false, isFavorite: false };
     curr.isLearned = !curr.isLearned;
     memoryUserProgress[key] = curr;
+    saveUserProgressStore(memoryUserProgress);
     return { isLearned: curr.isLearned };
   }
 
@@ -138,13 +180,18 @@ export class VocabularyModel {
         `SELECT is_favorite as isFavorite FROM user_vocabulary_progress WHERE user_id = ? AND vocabulary_id = ?`,
         [userId, vocabIdStr]
       );
-      return { isFavorite: !!rows[0]?.isFavorite };
+      const isFav = !!rows[0]?.isFavorite;
+      const key = `${userId}_${vocabIdStr}`;
+      memoryUserProgress[key] = { ...(memoryUserProgress[key] || { isLearned: false }), isFavorite: isFav };
+      saveUserProgressStore(memoryUserProgress);
+      return { isFavorite: isFav };
     }
 
     const key = `${userId}_${vocabIdStr}`;
     const curr = memoryUserProgress[key] || { isLearned: false, isFavorite: false };
     curr.isFavorite = !curr.isFavorite;
     memoryUserProgress[key] = curr;
+    saveUserProgressStore(memoryUserProgress);
     return { isFavorite: curr.isFavorite };
   }
 

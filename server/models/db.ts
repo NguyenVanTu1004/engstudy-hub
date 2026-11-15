@@ -52,38 +52,78 @@ export const dbConfigUsed = {
 export let pool: mysql.Pool | null = null;
 
 export async function initDatabase() {
-  try {
-    console.log(`📡 Connecting to MySQL database at ${dbConfigUsed.host}:${dbConfigUsed.port}...`);
-    
-    const useSsl = process.env.DB_SSL === "true" || rawHost.includes("aivencloud") || rawHost.includes("tidbcloud") || rawHost.includes("clever-cloud") || rawHost.includes("rlwy.net");
-
-    pool = mysql.createPool({
+  const createAndTestPool = async (sslConfig: any) => {
+    const testPool = mysql.createPool({
       host: dbConfigUsed.host,
       port: dbConfigUsed.port,
       user: dbConfigUsed.user,
       password: dbConfigUsed.password,
       database: dbConfigUsed.database,
-      ssl: useSsl ? { rejectUnauthorized: false } : undefined,
+      ssl: sslConfig,
       waitForConnections: true,
       connectionLimit: 10,
       queueLimit: 0,
-      connectTimeout: 10000,
+      connectTimeout: 8000,
       enableKeepAlive: true,
       keepAliveInitialDelay: 0
     });
-
-    const connection = await pool.getConnection();
+    const connection = await testPool.getConnection();
     connection.release();
+    return testPool;
+  };
+
+  try {
+    console.log(`📡 Connecting to MySQL database at ${dbConfigUsed.host}:${dbConfigUsed.port}...`);
+    
+    // Determine whether to attempt SSL first:
+    // Aiven / TiDB Cloud mandate SSL. Localhost, Railway TCP proxies, and Clever Cloud reject SSL handshakes.
+    const isCloudHostWithSsl = process.env.DB_SSL === "true" || rawHost.includes("aivencloud") || rawHost.includes("tidbcloud");
+    const isRailwayOrPlain = rawHost.includes("rlwy.net") || rawHost.includes("clever-cloud") || rawHost === "127.0.0.1" || rawHost === "localhost";
+
+    const trySslFirst = isCloudHostWithSsl && !isRailwayOrPlain;
+
+    try {
+      pool = await createAndTestPool(trySslFirst ? { rejectUnauthorized: false } : undefined);
+    } catch (firstErr: any) {
+      console.warn(`⚠️ First connection attempt (${trySslFirst ? "with SSL" : "Plain TCP"}) failed: ${firstErr.message}. Retrying with alternate SSL setting...`);
+      // Retry once by inverting SSL
+      pool = await createAndTestPool(trySslFirst ? undefined : { rejectUnauthorized: false });
+    }
+
     isDbConnected = true;
+    dbErrorDetails = "";
     console.log(`✅ MySQL Database connected successfully [${dbConfigUsed.database}] on port ${dbConfigUsed.port}`);
 
     await createTablesIfNotExist();
+    await syncPersistentUsersToDatabase();
   } catch (error: any) {
     isDbConnected = false;
     dbErrorDetails = error.message || String(error);
     pool = null;
-    console.warn("⚠️ Cannot connect to MySQL. Falling back to high-performance in-memory mode.");
+    console.warn("⚠️ Cannot connect to MySQL. Falling back to persistent file/in-memory mode.");
     console.warn("⚠️ Error details:", dbErrorDetails);
+  }
+}
+
+async function syncPersistentUsersToDatabase() {
+  if (!pool) return;
+  try {
+    const usersStorePath = path.join(process.cwd(), "server", "data", "users_store.json");
+    if (fs.existsSync(usersStorePath)) {
+      const storedUsers: any[] = JSON.parse(fs.readFileSync(usersStorePath, "utf-8"));
+      for (const u of storedUsers) {
+        const [existing]: any = await pool.query("SELECT id FROM users WHERE username = ? OR email = ?", [u.username, u.email]);
+        if (!existing || existing.length === 0) {
+          console.log(`🔄 Syncing persistent user [${u.username}] to MySQL database...`);
+          await pool.query(
+            "INSERT INTO users (username, full_name, email, password, role, is_active, avatar, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+            [u.username, u.fullName, u.email, u.password, u.role, u.isActive ? 1 : 0, u.avatar, u.createdAt || new Date().toISOString().split("T")[0]]
+          );
+        }
+      }
+    }
+  } catch (err: any) {
+    console.warn("⚠️ Error syncing persistent users to MySQL:", err.message);
   }
 }
 
@@ -228,19 +268,17 @@ async function createTablesIfNotExist() {
 
     console.log("⚙️ Verified production MySQL schemas (users, vocabularies, user_vocabulary_progress, exam_results, study_sessions, otps, study_documents).");
 
-    // Insert Default admin user & sample members if empty or only admin
+    // Insert Default admin user & sample members if empty
     const [rows]: any = await pool.query("SELECT COUNT(*) as count FROM users");
     if (rows[0].count === 0) {
       const defaultHashedPassword = await bcrypt.hash("VanTu1004@", 10);
-      const userHashedPassword = await bcrypt.hash("123456", 10);
       await pool.query(`
         INSERT INTO users (username, full_name, email, password, role, is_active, avatar, created_at)
         VALUES 
-        ('admin', 'Nguyễn Văn Tứ', 'nguyenvantu03848@gmail.com', ?, 'ADMIN', 1, 'https://api.dicebear.com/7.x/identicon/svg?seed=Mercury', CURRENT_DATE()),
-        ('tuan_nguyen', 'Nguyễn Anh Tuấn', 'tuanna@gmail.com', ?, 'USER', 1, 'https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?w=100&auto=format&fit=crop&q=80', CURRENT_DATE()),
-        ('lan_anh', 'Trần Lan Anh', 'lananh99@yahoo.com', ?, 'USER', 0, 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100&auto=format&fit=crop&q=80', CURRENT_DATE()),
-        ('hoang_long', 'Phạm Hoàng Long', 'longph@outlook.com', ?, 'USER', 1, 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&auto=format&fit=crop&q=80', CURRENT_DATE())
-      `, [defaultHashedPassword, userHashedPassword, userHashedPassword, userHashedPassword]);
+        ('admin', 'Nguyễn Văn Tứ', 'nguyenvantu03848@gmail.com', ?, 'ADMIN', 1, 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=200&auto=format&fit=crop&q=80', CURRENT_DATE()),
+        ('tu', 'văn tứ', 'tu@gmail.com', ?, 'USER', 1, 'https://api.dicebear.com/7.x/identicon/svg?seed=Mars', CURRENT_DATE()),
+        ('van tuu', 'nguyen van tu', 'nguyenvantu090893848@gmail.com', ?, 'USER', 1, 'https://api.dicebear.com/7.x/identicon/svg?seed=Earth', CURRENT_DATE())
+      `, [defaultHashedPassword, defaultHashedPassword, defaultHashedPassword]);
       console.log("👤 Seeded default administrator and sample members into database.");
     }
 

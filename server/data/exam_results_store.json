@@ -1,0 +1,24 @@
+[
+  {
+    "id": 1,
+    "userId": 1,
+    "examTitle": "TOEIC Full Practice Test 01",
+    "category": "TOEIC",
+    "score": 90,
+    "correctAnswers": 18,
+    "totalQuestions": 20,
+    "timeSpent": "10m 15s",
+    "createdAt": "2026-11-14T16:08:04.000Z"
+  },
+  {
+    "id": 2,
+    "userId": 1,
+    "examTitle": "TOEIC Office Vocabulary Test",
+    "category": "TOEIC",
+    "score": 25,
+    "correctAnswers": 1,
+    "totalQuestions": 4,
+    "timeSpent": "0m 14s",
+    "createdAt": "2026-11-14T18:33:43.000Z"
+  }
+]

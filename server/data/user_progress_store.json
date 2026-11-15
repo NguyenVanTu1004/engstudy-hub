@@ -1,0 +1,596 @@
+[
+  {
+    "userId": 1,
+    "vocabId": "v_1782543830399_9",
+    "isLearned": 1,
+    "isFavorite": 1
+  },
+  {
+    "userId": 1,
+    "vocabId": "v_1782543830399_8",
+    "isLearned": 1,
+    "isFavorite": 0
+  },
+  {
+    "userId": 1,
+    "vocabId": "v_1782543830399_6",
+    "isLearned": 1,
+    "isFavorite": 0
+  },
+  {
+    "userId": 1,
+    "vocabId": "v_1782543830399_7",
+    "isLearned": 1,
+    "isFavorite": 0
+  },
+  {
+    "userId": 1,
+    "vocabId": "v_1782543830399_5",
+    "isLearned": 1,
+    "isFavorite": 0
+  },
+  {
+    "userId": 1,
+    "vocabId": "v_1782543830399_4",
+    "isLearned": 1,
+    "isFavorite": 0
+  },
+  {
+    "userId": 1,
+    "vocabId": "v_1782543830399_3",
+    "isLearned": 1,
+    "isFavorite": 0
+  },
+  {
+    "userId": 1,
+    "vocabId": "v_1782543830399_23",
+    "isLearned": 1,
+    "isFavorite": 0
+  },
+  {
+    "userId": 1,
+    "vocabId": "v_1782543830399_22",
+    "isLearned": 0,
+    "isFavorite": 0
+  },
+  {
+    "userId": 1,
+    "vocabId": "v_1782543830399_21",
+    "isLearned": 1,
+    "isFavorite": 0
+  },
+  {
+    "userId": 1,
+    "vocabId": "v_1782543830399_20",
+    "isLearned": 1,
+    "isFavorite": 0
+  },
+  {
+    "userId": 1,
+    "vocabId": "v_1782543830399_2",
+    "isLearned": 1,
+    "isFavorite": 0
+  },
+  {
+    "userId": 1,
+    "vocabId": "v_1782543830399_19",
+    "isLearned": 0,
+    "isFavorite": 0
+  },
+  {
+    "userId": 1,
+    "vocabId": "v_1782543830399_18",
+    "isLearned": 1,
+    "isFavorite": 0
+  },
+  {
+    "userId": 1,
+    "vocabId": "v_1782543830399_17",
+    "isLearned": 1,
+    "isFavorite": 0
+  },
+  {
+    "userId": 9,
+    "vocabId": "v_1782543830399_9",
+    "isLearned": 1,
+    "isFavorite": 1
+  },
+  {
+    "userId": 9,
+    "vocabId": "v_1782543830399_8",
+    "isLearned": 1,
+    "isFavorite": 0
+  },
+  {
+    "userId": 9,
+    "vocabId": "v_1782543830399_7",
+    "isLearned": 1,
+    "isFavorite": 0
+  },
+  {
+    "userId": 9,
+    "vocabId": "v_1782543830399_6",
+    "isLearned": 1,
+    "isFavorite": 0
+  },
+  {
+    "userId": 9,
+    "vocabId": "v_1782543830399_5",
+    "isLearned": 1,
+    "isFavorite": 0
+  },
+  {
+    "userId": 9,
+    "vocabId": "v_1782543830399_4",
+    "isLearned": 1,
+    "isFavorite": 0
+  },
+  {
+    "userId": 9,
+    "vocabId": "v_1782543830399_3",
+    "isLearned": 1,
+    "isFavorite": 0
+  },
+  {
+    "userId": 9,
+    "vocabId": "v_1782543830399_23",
+    "isLearned": 1,
+    "isFavorite": 0
+  },
+  {
+    "userId": 9,
+    "vocabId": "v_1782543830399_22",
+    "isLearned": 1,
+    "isFavorite": 0
+  },
+  {
+    "userId": 9,
+    "vocabId": "v_1782543830399_21",
+    "isLearned": 1,
+    "isFavorite": 0
+  },
+  {
+    "userId": 9,
+    "vocabId": "v_1782543830399_20",
+    "isLearned": 1,
+    "isFavorite": 0
+  },
+  {
+    "userId": 9,
+    "vocabId": "v_1782543830399_2",
+    "isLearned": 1,
+    "isFavorite": 0
+  },
+  {
+    "userId": 9,
+    "vocabId": "v_1782543830399_19",
+    "isLearned": 1,
+    "isFavorite": 0
+  },
+  {
+    "userId": 9,
+    "vocabId": "v_1782543830399_18",
+    "isLearned": 1,
+    "isFavorite": 0
+  },
+  {
+    "userId": 9,
+    "vocabId": "v_1782543830399_17",
+    "isLearned": 1,
+    "isFavorite": 0
+  },
+  {
+    "userId": 9,
+    "vocabId": "v_1782543830399_16",
+    "isLearned": 1,
+    "isFavorite": 0
+  },
+  {
+    "userId": 1,
+    "vocabId": "v_1782543830399_16",
+    "isLearned": 1,
+    "isFavorite": 0
+  },
+  {
+    "userId": 1,
+    "vocabId": "v_1782543830399_15",
+    "isLearned": 1,
+    "isFavorite": 0
+  },
+  {
+    "userId": 1,
+    "vocabId": "v_1782543830399_14",
+    "isLearned": 1,
+    "isFavorite": 0
+  },
+  {
+    "userId": 1,
+    "vocabId": "v_1782543830399_13",
+    "isLearned": 1,
+    "isFavorite": 0
+  },
+  {
+    "userId": 1,
+    "vocabId": "v_1782543830399_12",
+    "isLearned": 1,
+    "isFavorite": 0
+  },
+  {
+    "userId": 9,
+    "vocabId": "v_1782543830399_15",
+    "isLearned": 1,
+    "isFavorite": 0
+  },
+  {
+    "userId": 9,
+    "vocabId": "v_1782543830399_14",
+    "isLearned": 1,
+    "isFavorite": 0
+  },
+  {
+    "userId": 9,
+    "vocabId": "v_1782543830399_13",
+    "isLearned": 1,
+    "isFavorite": 0
+  },
+  {
+    "userId": 9,
+    "vocabId": "v_1782543830399_12",
+    "isLearned": 1,
+    "isFavorite": 0
+  },
+  {
+    "userId": 9,
+    "vocabId": "v_1782543830399_11",
+    "isLearned": 1,
+    "isFavorite": 0
+  },
+  {
+    "userId": 9,
+    "vocabId": "v_1782543830399_10",
+    "isLearned": 1,
+    "isFavorite": 0
+  },
+  {
+    "userId": 9,
+    "vocabId": "v_1782543830399_1",
+    "isLearned": 1,
+    "isFavorite": 0
+  },
+  {
+    "userId": 9,
+    "vocabId": "v_1782543830399_0",
+    "isLearned": 1,
+    "isFavorite": 0
+  },
+  {
+    "userId": 9,
+    "vocabId": "v_1782543800689_9",
+    "isLearned": 1,
+    "isFavorite": 0
+  },
+  {
+    "userId": 9,
+    "vocabId": "v_1782543800689_8",
+    "isLearned": 1,
+    "isFavorite": 0
+  },
+  {
+    "userId": 9,
+    "vocabId": "v_1782543800689_7",
+    "isLearned": 1,
+    "isFavorite": 0
+  },
+  {
+    "userId": 9,
+    "vocabId": "v_1782543800689_6",
+    "isLearned": 1,
+    "isFavorite": 0
+  },
+  {
+    "userId": 9,
+    "vocabId": "v_1782543800689_5",
+    "isLearned": 1,
+    "isFavorite": 0
+  },
+  {
+    "userId": 9,
+    "vocabId": "v_1782543800689_4",
+    "isLearned": 1,
+    "isFavorite": 0
+  },
+  {
+    "userId": 9,
+    "vocabId": "v_1782543800689_3",
+    "isLearned": 1,
+    "isFavorite": 0
+  },
+  {
+    "userId": 9,
+    "vocabId": "v_1782543800689_23",
+    "isLearned": 1,
+    "isFavorite": 0
+  },
+  {
+    "userId": 9,
+    "vocabId": "v_1782543800689_22",
+    "isLearned": 1,
+    "isFavorite": 0
+  },
+  {
+    "userId": 9,
+    "vocabId": "v_1782543800689_21",
+    "isLearned": 1,
+    "isFavorite": 0
+  },
+  {
+    "userId": 9,
+    "vocabId": "v_1782543800689_20",
+    "isLearned": 1,
+    "isFavorite": 0
+  },
+  {
+    "userId": 9,
+    "vocabId": "v_1782543800689_2",
+    "isLearned": 1,
+    "isFavorite": 0
+  },
+  {
+    "userId": 9,
+    "vocabId": "v_1782543800689_19",
+    "isLearned": 1,
+    "isFavorite": 0
+  },
+  {
+    "userId": 9,
+    "vocabId": "v_1782543800689_18",
+    "isLearned": 1,
+    "isFavorite": 0
+  },
+  {
+    "userId": 9,
+    "vocabId": "v_1782543800689_17",
+    "isLearned": 1,
+    "isFavorite": 0
+  },
+  {
+    "userId": 9,
+    "vocabId": "v_1782543800689_16",
+    "isLearned": 1,
+    "isFavorite": 0
+  },
+  {
+    "userId": 9,
+    "vocabId": "v_1782543800689_15",
+    "isLearned": 1,
+    "isFavorite": 0
+  },
+  {
+    "userId": 9,
+    "vocabId": "v_1782543800689_14",
+    "isLearned": 1,
+    "isFavorite": 0
+  },
+  {
+    "userId": 9,
+    "vocabId": "v_1782543800689_13",
+    "isLearned": 1,
+    "isFavorite": 0
+  },
+  {
+    "userId": 9,
+    "vocabId": "v_1782543800689_12",
+    "isLearned": 1,
+    "isFavorite": 0
+  },
+  {
+    "userId": 9,
+    "vocabId": "v_1782543800689_11",
+    "isLearned": 1,
+    "isFavorite": 0
+  },
+  {
+    "userId": 9,
+    "vocabId": "v_1782543800689_10",
+    "isLearned": 1,
+    "isFavorite": 0
+  },
+  {
+    "userId": 9,
+    "vocabId": "v_1782543800689_1",
+    "isLearned": 1,
+    "isFavorite": 0
+  },
+  {
+    "userId": 9,
+    "vocabId": "v_1782543800689_0",
+    "isLearned": 1,
+    "isFavorite": 0
+  },
+  {
+    "userId": 9,
+    "vocabId": "v_1782542793369_9",
+    "isLearned": 1,
+    "isFavorite": 0
+  },
+  {
+    "userId": 1,
+    "vocabId": "v_1782543800689_11",
+    "isLearned": 0,
+    "isFavorite": 0
+  },
+  {
+    "userId": 1,
+    "vocabId": "v_1782543800689_10",
+    "isLearned": 0,
+    "isFavorite": 0
+  },
+  {
+    "userId": 9,
+    "vocabId": "v_1782542793369_8",
+    "isLearned": 1,
+    "isFavorite": 0
+  },
+  {
+    "userId": 9,
+    "vocabId": "v_1782542793369_7",
+    "isLearned": 1,
+    "isFavorite": 0
+  },
+  {
+    "userId": 9,
+    "vocabId": "v_1782542793369_6",
+    "isLearned": 1,
+    "isFavorite": 0
+  },
+  {
+    "userId": 9,
+    "vocabId": "v_1782542793369_5",
+    "isLearned": 1,
+    "isFavorite": 0
+  },
+  {
+    "userId": 9,
+    "vocabId": "v_1782542793369_4",
+    "isLearned": 1,
+    "isFavorite": 0
+  },
+  {
+    "userId": 9,
+    "vocabId": "v_1782542793369_3",
+    "isLearned": 1,
+    "isFavorite": 0
+  },
+  {
+    "userId": 9,
+    "vocabId": "v_1782542793369_26",
+    "isLearned": 1,
+    "isFavorite": 0
+  },
+  {
+    "userId": 9,
+    "vocabId": "v_1782542793369_25",
+    "isLearned": 1,
+    "isFavorite": 0
+  },
+  {
+    "userId": 9,
+    "vocabId": "v_1782542793369_24",
+    "isLearned": 1,
+    "isFavorite": 0
+  },
+  {
+    "userId": 9,
+    "vocabId": "v_1782542793369_23",
+    "isLearned": 1,
+    "isFavorite": 0
+  },
+  {
+    "userId": 9,
+    "vocabId": "v_1782542793369_20",
+    "isLearned": 1,
+    "isFavorite": 0
+  },
+  {
+    "userId": 9,
+    "vocabId": "v_1782542793369_17",
+    "isLearned": 1,
+    "isFavorite": 0
+  },
+  {
+    "userId": 9,
+    "vocabId": "v_1782542793369_16",
+    "isLearned": 1,
+    "isFavorite": 0
+  },
+  {
+    "userId": 9,
+    "vocabId": "v_1782542793369_0",
+    "isLearned": 1,
+    "isFavorite": 0
+  },
+  {
+    "userId": 9,
+    "vocabId": "v_1782495949986_9",
+    "isLearned": 1,
+    "isFavorite": 0
+  },
+  {
+    "userId": 9,
+    "vocabId": "v_1782495949986_8",
+    "isLearned": 1,
+    "isFavorite": 0
+  },
+  {
+    "userId": 9,
+    "vocabId": "v_1782495949986_7",
+    "isLearned": 1,
+    "isFavorite": 0
+  },
+  {
+    "userId": 9,
+    "vocabId": "v_1782495949986_6",
+    "isLearned": 1,
+    "isFavorite": 0
+  },
+  {
+    "userId": 9,
+    "vocabId": "v_1782495949986_5",
+    "isLearned": 1,
+    "isFavorite": 0
+  },
+  {
+    "userId": 9,
+    "vocabId": "v_1782495949986_48",
+    "isLearned": 1,
+    "isFavorite": 0
+  },
+  {
+    "userId": 9,
+    "vocabId": "v_1782495949986_47",
+    "isLearned": 1,
+    "isFavorite": 0
+  },
+  {
+    "userId": 9,
+    "vocabId": "v_1782495949986_46",
+    "isLearned": 1,
+    "isFavorite": 0
+  },
+  {
+    "userId": 9,
+    "vocabId": "v_1782495949986_45",
+    "isLearned": 1,
+    "isFavorite": 0
+  },
+  {
+    "userId": 9,
+    "vocabId": "v_1782495949986_44",
+    "isLearned": 1,
+    "isFavorite": 0
+  },
+  {
+    "userId": 1,
+    "vocabId": "v_1782543830399_11",
+    "isLearned": 0,
+    "isFavorite": 0
+  },
+  {
+    "userId": 1,
+    "vocabId": "v_1782543830399_10",
+    "isLearned": 1,
+    "isFavorite": 0
+  },
+  {
+    "userId": 1,
+    "vocabId": "v_1782543830399_1",
+    "isLearned": 1,
+    "isFavorite": 0
+  },
+  {
+    "userId": 1,
+    "vocabId": "v_1782543830399_0",
+    "isLearned": 1,
+    "isFavorite": 0
+  }
+]

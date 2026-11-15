@@ -1,0 +1,35 @@
+[
+  {
+    "id": 1,
+    "username": "admin",
+    "fullName": "Nguyễn Văn Tứ",
+    "email": "nguyenvantu03848@gmail.com",
+    "password": "$2b$10$rYNZ9.15wa3YiUmkyePAZ.8FL/Y6T8VAD6pi7CmhuWMLDc5/S1J9a",
+    "role": "ADMIN",
+    "isActive": true,
+    "avatar": "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=200&auto=format&fit=crop&q=80",
+    "createdAt": "2026-06-25"
+  },
+  {
+    "id": 2,
+    "username": "tu",
+    "fullName": "văn tứ",
+    "email": "tu@gmail.com",
+    "password": "VanTu1004@",
+    "role": "USER",
+    "isActive": true,
+    "avatar": "https://api.dicebear.com/7.x/identicon/svg?seed=Mars",
+    "createdAt": "2026-06-25"
+  },
+  {
+    "id": 9,
+    "username": "van tuu",
+    "fullName": "nguyen van tu",
+    "email": "nguyenvantu090893848@gmail.com",
+    "password": "$2b$10$udMTNLrP42l/uthcjD1Gj.dNd17OLwNm5bPTmttXjDj43EBWhq3mW",
+    "role": "USER",
+    "isActive": true,
+    "avatar": "https://api.dicebear.com/7.x/identicon/svg?seed=Earth",
+    "createdAt": "2026-11-13"
+  }
+]
